@@ -18,17 +18,45 @@ public sealed class ClassWithMembersAndTypesRecord : SerializationRecord
     internal ClassInfo ClassInfo { get; }
     internal MemberTypeInfo MemberTypeInfo { get; }
     internal object[] MemberValues { get; }
+    internal Dictionary<int, SerializationRecord> RecordMap { get; }
     public int LibraryId { get; }
 
-    private ClassWithMembersAndTypesRecord(ClassInfo classInfo, int libraryId, MemberTypeInfo memberTypeInfo, object[] memberValues)
+    private ClassWithMembersAndTypesRecord(ClassInfo classInfo, int libraryId,
+        MemberTypeInfo memberTypeInfo, object[] memberValues,
+        Dictionary<int, SerializationRecord> recordMap)
     {
         ClassInfo = classInfo;
         MemberTypeInfo = memberTypeInfo;
         LibraryId = libraryId;
         MemberValues = memberValues;
+        RecordMap = recordMap;
     }
 
     public override RecordType RecordType => RecordType.ClassWithMembersAndTypes;
+
+    public object this[string memberName]
+    {
+        get
+        {
+            int index = Array.IndexOf(ClassInfo.MemberNames, memberName);
+            if (index < 0)
+            {
+                throw new KeyNotFoundException();
+            }
+
+            object value = MemberValues[index];
+            if (value is MemberReferenceRecord memberReference)
+            {
+                value = RecordMap[memberReference.Reference];
+            }
+
+            if (value is SerializationRecord record)
+            {
+                return record.GetValue();
+            }
+            return value;
+        }
+    }
 
     internal override int Id => ClassInfo.ObjectId;
 
@@ -43,8 +71,11 @@ public sealed class ClassWithMembersAndTypesRecord : SerializationRecord
             classInfo,
             reader.ReadInt32(),
             memberTypeInfo,
-            memberTypeInfo.ReadValuesFromMemberTypeInfo(reader, recordMap));
+            memberTypeInfo.ReadValuesFromMemberTypeInfo(reader, recordMap),
+            recordMap);
 
         return record;
     }
+
+    public override bool IsSerializedInstanceOf(Type type) => type.FullName == ClassInfo.Name;
 }

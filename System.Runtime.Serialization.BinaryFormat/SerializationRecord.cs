@@ -17,6 +17,10 @@ public abstract class SerializationRecord
 
     internal virtual bool IsFollowedByInlineData { get; }
 
+    public virtual bool IsSerializedInstanceOf(Type type) => false;
+
+    public virtual object GetValue() => this;
+
     /// <summary>
     ///  Reads an object member value of <paramref name="type"/> with optional clarifying <paramref name="typeInfo"/>.
     /// </summary>
@@ -66,7 +70,7 @@ public abstract class SerializationRecord
     ///  Creates a <see cref="DateTime"/> object from raw data with validation.
     /// </summary>
     /// <exception cref="SerializationException"><paramref name="data"/> was invalid.</exception>
-    private static DateTime CreateDateTimeFromData(long data)
+    internal static DateTime CreateDateTimeFromData(long data)
     {
         // Copied from System.Runtime.Serialization.Formatters.Binary.BinaryParser
 

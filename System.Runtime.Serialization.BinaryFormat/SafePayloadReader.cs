@@ -44,17 +44,36 @@ public class SafePayloadReader
         {
             RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
             RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
-            RecordType.MessageEnd => MessageEndRecord.Parse(),
-            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
             RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
-            _ => null! // throw new NotImplementedException()
+            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
+            RecordType.MemberReference => MemberReferenceRecord.Parse(reader),
+            RecordType.ArraySinglePrimitive => ArraySinglePrimitiveRecord<int>.Parse(reader),
+            RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader, recordMap),
+            RecordType.MessageEnd => MessageEndRecord.Parse(),
+            RecordType.ObjectNull => ObjectNullRecord.Instance,
+            RecordType.ObjectNullMultiple256 => ObjectNullMultiple256Record.Parse(reader),
+            RecordType.ObjectNullMultiple => ObjectNullMultipleRecord.Parse(reader),
+            _ => throw new NotImplementedException(recordType.ToString())
         };
 
-        if (record?.Id >= 0)
+        if (record.Id >= 0)
         {
             recordMap.Add(record.Id, record);
         }
 
         return record;
+    }
+
+    public SerializationRecord GetTopLevel<T>()
+    {
+        foreach (SerializationRecord record in Records)
+        {
+            if (record.IsSerializedInstanceOf(typeof(T)))
+            {
+                return record;
+            }
+        }
+
+        throw new KeyNotFoundException();
     }
 }
