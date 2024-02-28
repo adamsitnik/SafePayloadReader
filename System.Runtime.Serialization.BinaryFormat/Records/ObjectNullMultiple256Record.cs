@@ -1,0 +1,25 @@
+﻿using System.IO;
+
+namespace System.Runtime.Serialization.BinaryFormat;
+
+/// <summary>
+///  Multiple null object record (less than 256).
+/// </summary>
+/// <remarks>
+///  <para>
+///   <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/f4abb5dd-aab7-4e0a-9d77-1d6c99f5779e">
+///    [MS-NRBF] 2.5.5
+///   </see>
+///  </para>
+/// </remarks>
+internal sealed class ObjectNullMultiple256Record : SerializationRecord
+{
+    private ObjectNullMultiple256Record(byte count) => Count = count;
+
+    public override RecordType RecordType => RecordType.ObjectNullMultiple256;
+
+    internal byte Count { get; }
+
+    internal static ObjectNullMultiple256Record Parse(BinaryReader reader)
+        => new(reader.ReadByte());
+}

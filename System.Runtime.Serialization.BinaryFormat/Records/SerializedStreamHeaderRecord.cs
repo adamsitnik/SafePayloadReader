@@ -2,7 +2,17 @@
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
-public sealed class SerializedStreamHeaderRecord : SerializationRecord
+/// <summary>
+///  Binary format header.
+/// </summary>
+/// <remarks>
+///  <para>
+///   <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/a7e578d3-400a-4249-9424-7529d10d1b3c">
+///    [MS-NRBF] 2.6.1
+///   </see>
+///  </para>
+/// </remarks>
+internal sealed class SerializedStreamHeaderRecord : SerializationRecord
 {
     internal SerializedStreamHeaderRecord(int rootId, int headerId, int majorVersion, int minorVersion)
     {
@@ -12,27 +22,15 @@ public sealed class SerializedStreamHeaderRecord : SerializationRecord
         MinorVersion = minorVersion;
     }
 
-    /// <summary>
-    ///  The id of the root object record.
-    /// </summary>
-    public int RootId { get; }
-
-    /// <summary>
-    ///  Ignored. BinaryFormatter puts out -1.
-    /// </summary>
-    public int HeaderId { get; }
-
-    /// <summary>
-    ///  Must be 1.
-    /// </summary>
-    public int MajorVersion { get; }
-
-    /// <summary>
-    ///  Must be 0.
-    /// </summary>
-    public int MinorVersion { get; }
-
     public override RecordType RecordType => RecordType.SerializedStreamHeader;
+
+    internal int RootId { get; }
+
+    internal int HeaderId { get; }
+
+    internal int MajorVersion { get; }
+
+    internal int MinorVersion { get; }
 
     internal static SerializedStreamHeaderRecord Parse(BinaryReader reader)
     {

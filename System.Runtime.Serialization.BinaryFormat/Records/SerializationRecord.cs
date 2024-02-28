@@ -15,11 +15,9 @@ public abstract class SerializationRecord
 
     internal virtual int Id => -1;
 
-    internal virtual bool IsFollowedByInlineData { get; }
-
     public virtual bool IsSerializedInstanceOf(Type type) => false;
 
-    public virtual object GetValue() => this;
+    public virtual object? GetValue() => this;
 
     /// <summary>
     ///  Reads an object member value of <paramref name="type"/> with optional clarifying <paramref name="typeInfo"/>.
@@ -45,7 +43,8 @@ public abstract class SerializationRecord
     /// <summary>
     ///  Reads a primitive of <paramref name="primitiveType"/> from the given <paramref name="reader"/>.
     /// </summary>
-    internal static object ReadPrimitiveType(BinaryReader reader, PrimitiveType primitiveType) => primitiveType switch
+    private protected static object ReadPrimitiveType(BinaryReader reader, PrimitiveType primitiveType)
+        => primitiveType switch
     {
         PrimitiveType.Boolean => reader.ReadBoolean(),
         PrimitiveType.Byte => reader.ReadByte(),
@@ -70,7 +69,7 @@ public abstract class SerializationRecord
     ///  Creates a <see cref="DateTime"/> object from raw data with validation.
     /// </summary>
     /// <exception cref="SerializationException"><paramref name="data"/> was invalid.</exception>
-    internal static DateTime CreateDateTimeFromData(long data)
+    private protected static DateTime CreateDateTimeFromData(long data)
     {
         // Copied from System.Runtime.Serialization.Formatters.Binary.BinaryParser
 
@@ -91,5 +90,49 @@ public abstract class SerializationRecord
         }
 
         return Unsafe.As<long, DateTime>(ref data);
+    }
+
+    private protected static SerializationRecord[] ReadRecords(BinaryReader reader, 
+        Dictionary<int, SerializationRecord> recordMap, int recordCount)
+    {
+        SerializationRecord[] records = new SerializationRecord[recordCount];
+        for (int i = 0; i < records.Length;)
+        {
+            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordMap, out _);
+
+            Insert(records, ref i, record, ObjectNullRecord.Instance);
+        }
+        return records;
+    }
+
+    private protected static int Insert(object?[] values, ref int index, object value, object nullValue)
+    {
+        int nullCount = value switch
+        {
+            ObjectNullRecord => 1,
+            ObjectNullMultiple256Record few => few.Count,
+            ObjectNullMultipleRecord many => many.Count,
+            _ => 0
+        };
+
+        if (nullCount > 0)
+        {
+            if (index + nullCount > values.Length)
+            {
+                throw new SerializationException($"Unexpected Null Record count: {nullCount}.");
+            }
+
+            do
+            {
+                values[index++] = nullValue;
+                nullCount--;
+            } while (nullCount > 0);
+        }
+        else
+        {
+            values[index++] = value;
+        }
+
+        return nullCount;
     }
 }

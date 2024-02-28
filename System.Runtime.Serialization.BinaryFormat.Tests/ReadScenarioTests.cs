@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -7,46 +5,21 @@ using Xunit;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests;
 
-[Serializable]
-public class CustomTypeWithPrimitiveFields
-{
-    public byte Byte;
-    public sbyte SignedByte;
-    public short Short;
-    public ushort UnsignedShort;
-    public int Integer;
-    public uint UnsignedInteger;
-    public long Long;
-    public ulong UnsignedLong;
-}
-
-[Serializable]
-public class CustomTypeWithStringField
-{
-    public string? Text;
-}
-
-[Serializable]
-public class CustomTypeWithPrimitiveArrayFields
-{
-    public byte[]? Bytes;
-    public sbyte[]? SignedBytes;
-    public short[]? Shorts;
-    public ushort[]? UnsignedShorts;
-    public int[]? Integers;
-    public uint[]? UnsignedIntegers;
-    public long[]? Longs;
-    public ulong[]? UnsignedLongs;
-}
-
-[Serializable]
-public class CustomTypeWithStringArrayField
-{
-    public string[]? Texts;
-}
-
 public class ReadScenarioTests
 {
+    [Serializable]
+    public class CustomTypeWithPrimitiveFields
+    {
+        public byte Byte;
+        public sbyte SignedByte;
+        public short Short;
+        public ushort UnsignedShort;
+        public int Integer;
+        public uint UnsignedInteger;
+        public long Long;
+        public ulong UnsignedLong;
+    }
+
     [Fact]
     public void CanRead_CustomTypeWithPrimitiveFields()
     {
@@ -66,16 +39,27 @@ public class ReadScenarioTests
 
         var payload = SafePayloadReader.Read(stream);
 
-        ClassWithMembersAndTypesRecord serializationRecord = (ClassWithMembersAndTypesRecord)payload.GetTopLevel<CustomTypeWithPrimitiveFields>();
+        ClassRecord serializationRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithPrimitiveFields>();
 
-        Assert.Equal(input.Byte, serializationRecord[nameof(CustomTypeWithPrimitiveFields.Byte)]);
-        Assert.Equal(input.SignedByte, serializationRecord[nameof(CustomTypeWithPrimitiveFields.SignedByte)]);
-        Assert.Equal(input.Short, serializationRecord[nameof(CustomTypeWithPrimitiveFields.Short)]);
-        Assert.Equal(input.UnsignedShort, serializationRecord[nameof(CustomTypeWithPrimitiveFields.UnsignedShort)]);
-        Assert.Equal(input.Integer, serializationRecord[nameof(CustomTypeWithPrimitiveFields.Integer)]);
-        Assert.Equal(input.UnsignedInteger, serializationRecord[nameof(CustomTypeWithPrimitiveFields.UnsignedInteger)]);
-        Assert.Equal(input.Long, serializationRecord[nameof(CustomTypeWithPrimitiveFields.Long)]);
-        Assert.Equal(input.UnsignedLong, serializationRecord[nameof(CustomTypeWithPrimitiveFields.UnsignedLong)]);
+        Verify(input, serializationRecord);
+    }
+
+    private static void Verify(CustomTypeWithPrimitiveFields expected, ClassRecord classRecord)
+    {
+        Assert.Equal(expected.Byte, classRecord[nameof(CustomTypeWithPrimitiveFields.Byte)]);
+        Assert.Equal(expected.SignedByte, classRecord[nameof(CustomTypeWithPrimitiveFields.SignedByte)]);
+        Assert.Equal(expected.Short, classRecord[nameof(CustomTypeWithPrimitiveFields.Short)]);
+        Assert.Equal(expected.UnsignedShort, classRecord[nameof(CustomTypeWithPrimitiveFields.UnsignedShort)]);
+        Assert.Equal(expected.Integer, classRecord[nameof(CustomTypeWithPrimitiveFields.Integer)]);
+        Assert.Equal(expected.UnsignedInteger, classRecord[nameof(CustomTypeWithPrimitiveFields.UnsignedInteger)]);
+        Assert.Equal(expected.Long, classRecord[nameof(CustomTypeWithPrimitiveFields.Long)]);
+        Assert.Equal(expected.UnsignedLong, classRecord[nameof(CustomTypeWithPrimitiveFields.UnsignedLong)]);
+    }
+
+    [Serializable]
+    public class CustomTypeWithStringField
+    {
+        public string? Text;
     }
 
     [Fact]
@@ -90,9 +74,22 @@ public class ReadScenarioTests
 
         var payload = SafePayloadReader.Read(stream);
 
-        ClassWithMembersAndTypesRecord serializationRecord = (ClassWithMembersAndTypesRecord)payload.GetTopLevel<CustomTypeWithStringField>();
+        ClassRecord serializationRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithStringField>();
 
         Assert.Equal(input.Text, serializationRecord[nameof(CustomTypeWithStringField.Text)]);
+    }
+
+    [Serializable]
+    public class CustomTypeWithPrimitiveArrayFields
+    {
+        public byte[]? Bytes;
+        public sbyte[]? SignedBytes;
+        public short[]? Shorts;
+        public ushort[]? UnsignedShorts;
+        public int[]? Integers;
+        public uint[]? UnsignedIntegers;
+        public long[]? Longs;
+        public ulong[]? UnsignedLongs;
     }
 
     [Fact]
@@ -114,7 +111,7 @@ public class ReadScenarioTests
 
         var payload = SafePayloadReader.Read(stream);
 
-        ClassWithMembersAndTypesRecord serializationRecord = (ClassWithMembersAndTypesRecord)payload.GetTopLevel<CustomTypeWithPrimitiveArrayFields>();
+        ClassRecord serializationRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithPrimitiveArrayFields>();
 
         Assert.Equal(input.Bytes, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.Bytes)]);
         Assert.Equal(input.SignedBytes, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.SignedBytes)]);
@@ -124,6 +121,12 @@ public class ReadScenarioTests
         Assert.Equal(input.UnsignedIntegers, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.UnsignedIntegers)]);
         Assert.Equal(input.Longs, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.Longs)]);
         Assert.Equal(input.UnsignedLongs, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.UnsignedLongs)]);
+    }
+
+    [Serializable]
+    public class CustomTypeWithStringArrayField
+    {
+        public string[]? Texts;
     }
 
     [Theory]
@@ -141,7 +144,7 @@ public class ReadScenarioTests
 
         var payload = SafePayloadReader.Read(stream);
 
-        ClassWithMembersAndTypesRecord serializationRecord = (ClassWithMembersAndTypesRecord)payload.GetTopLevel<CustomTypeWithStringArrayField>();
+        ClassRecord serializationRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithStringArrayField>();
 
         Assert.Equal(input.Texts, serializationRecord[nameof(CustomTypeWithStringArrayField.Texts)]);
     }
@@ -158,7 +161,7 @@ public class ReadScenarioTests
 
         var payload = SafePayloadReader.Read(stream);
 
-        ClassWithMembersAndTypesRecord serializationRecord = (ClassWithMembersAndTypesRecord)payload.GetTopLevel<CustomTypeWithStringArrayField>();
+        ClassRecord serializationRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithStringArrayField>();
 
         Assert.Equal(input.Texts, serializationRecord[nameof(CustomTypeWithStringArrayField.Texts)]);
     }
@@ -191,7 +194,165 @@ public class ReadScenarioTests
         Assert.Equal(input, topLevel.GetValue());
     }
 
-    private static MemoryStream Serialize<T>(T instance)
+    [Fact]
+    public void CanRead_ComplexSystemType()
+    {
+        Exception input = new("Hello, World!");
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        ClassRecord classRecord = (ClassRecord)payload.GetTopLevel<Exception>();
+
+        Assert.Equal(input.Message, classRecord[nameof(Exception.Message)]);
+    }
+
+    [Fact]
+    public void CanRead_ArraysOfComplexTypes()
+    {
+        CustomTypeWithPrimitiveFields[] input = [
+            new () { Byte = 1 },
+            new () { Integer = 3 },
+            new () { Short = 4 },
+            new () { Long = 5 },
+        ];
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        SerializationRecord topLevel = payload.GetTopLevel<CustomTypeWithPrimitiveFields[]>();
+
+        object[] array = (object[])topLevel.GetValue();
+
+        for (int i = 0; i < input.Length; i++)
+        {
+            Verify(input[i], (ClassRecord)array[i]);
+        }
+    }
+
+    [Serializable]
+    public class CustomTypeWithArrayOfComplexTypes
+    {
+        public CustomTypeWithPrimitiveFields?[]? Array;
+    }
+
+    [Fact]
+    public void CanRead_TypesWithArraysOfComplexTypes()
+    {
+        CustomTypeWithArrayOfComplexTypes input = new()
+        {
+            Array =
+            [
+                new() { Byte = 1 },
+                new() { Integer = 2 },
+                new() { Short = 3 },
+                new() { Long = 4 },
+                new() { UnsignedInteger = 5 },
+                null!
+            ]
+        };
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        ClassRecord classRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithArrayOfComplexTypes>();
+
+        object array = classRecord[nameof(CustomTypeWithArrayOfComplexTypes.Array)]!;
+    }
+
+    [Theory]
+    [InlineData(byte.MaxValue)] // ObjectNullMultiple256
+    [InlineData(byte.MaxValue + 2)] // ObjectNullMultiple
+    public void CanRead_TypesWithArraysOfComplexTypes_MultipleNulls(int nullCount)
+    {
+        CustomTypeWithArrayOfComplexTypes input = new()
+        {
+            Array = Enumerable.Repeat<CustomTypeWithPrimitiveFields>(null!, nullCount).ToArray()
+        };
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        ClassRecord classRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithArrayOfComplexTypes>();
+
+        object[] array = (object[])classRecord[nameof(CustomTypeWithArrayOfComplexTypes.Array)]!;
+        Assert.Equal(nullCount, array.Length);
+        Assert.All(array, Assert.Null);
+    }
+
+    [Fact]
+    public void CanRead_ArraysOfObjects()
+    {
+        object?[] input = [
+            1,
+            "test",
+            null
+        ];
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        SerializationRecord serializationRecord = payload.GetTopLevel<object[]>();
+
+        object[] value = (object[])serializationRecord.GetValue()!;
+
+        Assert.Equal(input, value);
+    }
+
+    [Theory]
+    [InlineData(byte.MaxValue)] // ObjectNullMultiple256
+    [InlineData(byte.MaxValue + 2)] // ObjectNullMultiple
+    public void CanRead_ArraysOfObjects_MultipleNulls(int nullCount)
+    {
+        object?[] input = Enumerable.Repeat<object>(null!, nullCount).ToArray();
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        SerializationRecord serializationRecord = payload.GetTopLevel<object[]>();
+
+        object[] array = (object[])serializationRecord.GetValue();
+        Assert.Equal(nullCount, array.Length);
+        Assert.All(array, Assert.Null);
+    }
+
+    [Serializable]
+    public class CustomTypeWithArrayOfObjects
+    {
+        public object?[]? Array;
+    }
+
+    [Fact]
+    public void CanRead_CustomTypeWithArrayOfObjects()
+    {
+        CustomTypeWithArrayOfObjects input = new()
+        {
+            Array = [
+                1,
+                false,
+                "string",
+                null
+            ]
+        };
+
+        using MemoryStream stream = Serialize(input);
+
+        var payload = SafePayloadReader.Read(stream);
+
+        ClassRecord classRecord = (ClassRecord)payload.GetTopLevel<CustomTypeWithArrayOfObjects>();
+
+        object[] values = (object[])classRecord[nameof(CustomTypeWithArrayOfObjects.Array)]!;
+
+        Assert.Equal(input.Array, values);
+    }
+
+    private static MemoryStream Serialize<T>(T instance) where T : notnull
     {
         MemoryStream ms = new();
 #pragma warning disable SYSLIB0011 // Type or member is obsolete

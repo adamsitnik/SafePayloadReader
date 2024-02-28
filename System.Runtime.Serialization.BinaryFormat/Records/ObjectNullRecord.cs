@@ -16,5 +16,5 @@ internal sealed class ObjectNullRecord : SerializationRecord
 
     public override RecordType RecordType => RecordType.ObjectNull;
 
-    public override object GetValue() => null!;
+    public override object? GetValue() => null;
 }

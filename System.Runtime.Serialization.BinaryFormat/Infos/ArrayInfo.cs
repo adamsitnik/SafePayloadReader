@@ -14,16 +14,16 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal readonly struct ArrayInfo
 {
-    public int ObjectId { get; }
-    public int Length { get; }
-
-    private ArrayInfo(int objectId, int length)
+    internal ArrayInfo(int objectId, int length)
     {
         Length = length;
         ObjectId = objectId;
     }
 
-    public static ArrayInfo Parse(BinaryReader reader)
+    internal int ObjectId { get; }
+    internal int Length { get; }
+
+    internal static ArrayInfo Parse(BinaryReader reader)
     {
         int id = reader.ReadInt32();
         int length = reader.ReadInt32();
@@ -33,6 +33,6 @@ internal readonly struct ArrayInfo
             throw new SerializationException($"Invalid array length: {length}");
         }
 
-        return new ArrayInfo(id, length);
+        return new(id, length);
     }
 }

@@ -14,16 +14,16 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ObjectNullMultipleRecord : SerializationRecord
 {
-    internal int Count { get; }
-
     private ObjectNullMultipleRecord(int count) => Count = count;
 
     public override RecordType RecordType => RecordType.ObjectNullMultiple;
 
+    internal int Count { get; }
+
     internal static ObjectNullMultipleRecord Parse(BinaryReader reader)
     {
         int count = reader.ReadInt32();
-        if (count <= byte.MaxValue)
+        if (count <= byte.MaxValue) // BinaryFormatter would have used ObjectNullMultiple256Record
         {
             throw new SerializationException($"Unexpected count: {count}");
         }

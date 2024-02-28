@@ -14,7 +14,7 @@ public class SafePayloadReader
 
     public static SafePayloadReader Read(Stream stream, bool leaveOpen = false)
     {
-        //ArgumentNullException.ThrowIfNull(stream);
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
 
         using BinaryReader reader = new(stream, Encoding.UTF8, leaveOpen: leaveOpen);
         return Read(reader);
@@ -22,7 +22,7 @@ public class SafePayloadReader
 
     public static SafePayloadReader Read(BinaryReader reader)
     {
-        //ArgumentNullException.ThrowIfNull(reader);
+        if (reader is null) throw new ArgumentNullException(nameof(reader));
 
         List<SerializationRecord> records = new();
         Dictionary<int, SerializationRecord> recordMap = new();
@@ -42,18 +42,25 @@ public class SafePayloadReader
 
         SerializationRecord record = recordType switch
         {
-            RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
-            RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
-            RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
-            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
-            RecordType.MemberReference => MemberReferenceRecord.Parse(reader),
+            RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader, recordMap),
             RecordType.ArraySinglePrimitive => ArraySinglePrimitiveRecord<int>.Parse(reader),
             RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader, recordMap),
-            RecordType.MessageEnd => MessageEndRecord.Parse(),
+            RecordType.BinaryArray => BinaryArrayRecord.Parse(reader, recordMap),
+            RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
+            RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
+            RecordType.ClassWithId => ClassWithIdRecord.Parse(reader, recordMap),
+            RecordType.ClassWithMembers => ClassWithMembersRecord.Parse(reader, recordMap),
+            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
+            RecordType.MemberPrimitiveTyped => MemberPrimitiveTypedRecord.Parse(reader),
+            RecordType.MemberReference => MemberReferenceRecord.Parse(reader, recordMap),
+            RecordType.MessageEnd => MessageEndRecord.Singleton,
             RecordType.ObjectNull => ObjectNullRecord.Instance,
-            RecordType.ObjectNullMultiple256 => ObjectNullMultiple256Record.Parse(reader),
             RecordType.ObjectNullMultiple => ObjectNullMultipleRecord.Parse(reader),
-            _ => throw new NotImplementedException(recordType.ToString())
+            RecordType.ObjectNullMultiple256 => ObjectNullMultiple256Record.Parse(reader),
+            RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
+            RecordType.SystemClassWithMembers => SystemClassWithMembersRecord.Parse(reader, recordMap),
+            RecordType.SystemClassWithMembersAndTypes => SystemClassWithMembersAndTypesRecord.Parse(reader, recordMap),
+            _ => throw new NotSupportedException("Remote invocation is not supported by design")
         };
 
         if (record.Id >= 0)

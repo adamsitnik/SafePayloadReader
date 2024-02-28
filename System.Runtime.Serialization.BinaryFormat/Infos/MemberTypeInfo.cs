@@ -15,11 +15,11 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal readonly struct MemberTypeInfo
 {
-    private readonly (BinaryType BinaryType, object? AdditionalInfo)[] _infos;
+    internal MemberTypeInfo((BinaryType BinaryType, object? AdditionalInfo)[] infos) => Infos = infos;
 
-    internal MemberTypeInfo((BinaryType BinaryType, object? AdditionalInfo)[] infos) => _infos = infos;
+    internal readonly (BinaryType BinaryType, object? AdditionalInfo)[] Infos;
 
-    public static MemberTypeInfo Parse(BinaryReader reader, int count)
+    internal static MemberTypeInfo Parse(BinaryReader reader, int count)
     {
         (BinaryType BinaryType, object? AdditionalInfo)[] info = new (BinaryType BinaryType, object? AdditionalInfo)[count];
 
@@ -63,15 +63,13 @@ internal readonly struct MemberTypeInfo
         return new MemberTypeInfo(info);
     }
 
-    internal object[] ReadValuesFromMemberTypeInfo(
-        BinaryReader reader,
-        Dictionary<int, SerializationRecord> recordMap)
+    internal object[] ReadValues(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
     {
-        object[] memberValues = new object[_infos.Length];
+        object[] memberValues = new object[Infos.Length];
 
-        for (int i = 0; i < _infos.Length; i++)
+        for (int i = 0; i < Infos.Length; i++)
         {
-            memberValues[i] = SerializationRecord.ReadValue(reader, recordMap, _infos[i].BinaryType, _infos[i].AdditionalInfo);
+            memberValues[i] = SerializationRecord.ReadValue(reader, recordMap, Infos[i].BinaryType, Infos[i].AdditionalInfo);
         }
 
         return memberValues;

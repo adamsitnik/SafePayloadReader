@@ -17,18 +17,17 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal class ArraySinglePrimitiveRecord<T> : SerializationRecord
     where T : unmanaged
 {
-    private readonly int _id;
     private readonly T[] _values;
 
     internal ArraySinglePrimitiveRecord(int id, T[] values)
     {
-        _id = id;
+        Id = id;
         _values = values;
     }
 
     public override RecordType RecordType => RecordType.ArraySinglePrimitive;
 
-    internal override int Id => _id;
+    internal override int Id { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 
@@ -36,7 +35,6 @@ internal class ArraySinglePrimitiveRecord<T> : SerializationRecord
 
     internal static SerializationRecord Parse(BinaryReader reader)
     {
-        // Special casing to avoid excessive boxing/unboxing.
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
         PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
 

@@ -14,16 +14,16 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ClassTypeInfo
 {
-    public string TypeName { get; }
-    public int LibraryId { get; }
-
-    public ClassTypeInfo(string typeName, int libraryId)
+    internal ClassTypeInfo(string typeName, int libraryId)
     {
         TypeName = typeName;
         LibraryId = libraryId;
     }
 
-    public static ClassTypeInfo Parse(BinaryReader reader) => new(
+    internal string TypeName { get; }
+    internal int LibraryId { get; }
+
+    internal static ClassTypeInfo Parse(BinaryReader reader) => new(
         reader.ReadString(),
         reader.ReadInt32());
 }
