@@ -21,6 +21,7 @@ internal readonly struct ArrayInfo
     }
 
     internal int ObjectId { get; }
+
     internal int Length { get; }
 
     internal static ArrayInfo Parse(BinaryReader reader)

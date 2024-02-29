@@ -22,7 +22,9 @@ internal sealed class ClassInfo
     }
 
     internal int ObjectId { get; }
+
     internal string Name { get; }
+
     internal string[] MemberNames { get; }
 
     internal static ClassInfo Parse(BinaryReader reader)

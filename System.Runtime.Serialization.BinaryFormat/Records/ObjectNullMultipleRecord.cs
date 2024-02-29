@@ -25,7 +25,7 @@ internal sealed class ObjectNullMultipleRecord : SerializationRecord
         int count = reader.ReadInt32();
         if (count <= byte.MaxValue) // BinaryFormatter would have used ObjectNullMultiple256Record
         {
-            throw new SerializationException($"Unexpected count: {count}");
+            throw new SerializationException($"Unexpected Null Record count: {count}");
         }
         return new(count);
     }

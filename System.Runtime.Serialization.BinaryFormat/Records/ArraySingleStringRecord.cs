@@ -13,16 +13,9 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///   </see>
 ///  </para>
 /// </remarks>
-internal sealed class ArraySingleStringRecord : SerializationRecord
+internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private readonly BinaryObjectStringRecord[] _records;
-    private string?[]? _values;
-
-    private ArraySingleStringRecord(int objectId, BinaryObjectStringRecord[] records)
-    {
-        Id = objectId;
-        _records = records;
-    }
+    private ArraySingleStringRecord(int objectId, string?[] values) : base(values) => Id = objectId;
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
@@ -30,26 +23,13 @@ internal sealed class ArraySingleStringRecord : SerializationRecord
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
 
-    public override object GetValue()
-    {
-        if (_values is null)
-        {
-            string?[] values = new string?[_records.Length];
-            for (int i = 0; i < _records.Length; i++)
-            {
-                values[i] = _records[i].Value;
-            }
-            _values = values;
-        }
-
-        return _values;
-    }
+    internal override object GetValue() => Values;
 
     internal static ArraySingleStringRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordsMap)
     {
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
 
-        BinaryObjectStringRecord[] records = new BinaryObjectStringRecord[arrayInfo.Length];
+        string?[] values = new string?[arrayInfo.Length];
 
         for (int i = 0; i < arrayInfo.Length;)
         {
@@ -57,14 +37,14 @@ internal sealed class ArraySingleStringRecord : SerializationRecord
 
             if (record is BinaryObjectStringRecord stringRecord)
             {
-                records[i++] = stringRecord;
+                values[i++] = stringRecord.Value;
             }
-            else if (Insert(records, ref i, record, BinaryObjectStringRecord.NullString) < 0)
+            else if (Insert(values, ref i, record, null) < 0)
             {
                 throw new SerializationException($"Unexpected record type {recordType}");
             }
         }
 
-        return new(arrayInfo.ObjectId, records);
+        return new(arrayInfo.ObjectId, values);
     }
 }

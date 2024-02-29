@@ -12,6 +12,7 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
     }
 
     public override RecordType RecordType => RecordType.SystemClassWithMembersAndTypes;
+
     public MemberTypeInfo MemberTypeInfo { get; }
 
     public override bool IsSerializedInstanceOf(Type type)

@@ -17,7 +17,7 @@ public abstract class SerializationRecord
 
     public virtual bool IsSerializedInstanceOf(Type type) => false;
 
-    public virtual object? GetValue() => this;
+    internal virtual object? GetValue() => this;
 
     /// <summary>
     ///  Reads an object member value of <paramref name="type"/> with optional clarifying <paramref name="typeInfo"/>.
@@ -69,7 +69,7 @@ public abstract class SerializationRecord
     ///  Creates a <see cref="DateTime"/> object from raw data with validation.
     /// </summary>
     /// <exception cref="SerializationException"><paramref name="data"/> was invalid.</exception>
-    private protected static DateTime CreateDateTimeFromData(long data)
+    internal static DateTime CreateDateTimeFromData(long data)
     {
         // Copied from System.Runtime.Serialization.Formatters.Binary.BinaryParser
 
@@ -105,7 +105,7 @@ public abstract class SerializationRecord
         return records;
     }
 
-    private protected static int Insert(object?[] values, ref int index, object value, object nullValue)
+    private protected static int Insert<T>(T?[] values, ref int index, object value, T? nullValue)
     {
         int nullCount = value switch
         {
@@ -130,7 +130,7 @@ public abstract class SerializationRecord
         }
         else
         {
-            values[index++] = value;
+            values[index++] = (T)value;
         }
 
         return nullCount;

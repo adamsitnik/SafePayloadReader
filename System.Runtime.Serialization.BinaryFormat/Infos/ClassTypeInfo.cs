@@ -21,6 +21,7 @@ internal sealed class ClassTypeInfo
     }
 
     internal string TypeName { get; }
+
     internal int LibraryId { get; }
 
     internal static ClassTypeInfo Parse(BinaryReader reader) => new(

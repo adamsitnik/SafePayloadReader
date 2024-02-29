@@ -21,13 +21,25 @@ public abstract class ClassRecord : SerializationRecord
         MemberValues = memberValues;
     }
 
+    public virtual IReadOnlyList<string> MemberNames => ClassInfo.MemberNames;
+
     internal override int Id => ClassInfo.ObjectId;
 
-    internal ClassInfo ClassInfo { get; }
+    internal virtual ClassInfo ClassInfo { get; }
 
-    internal object[] MemberValues { get; }
+    internal virtual object[] MemberValues { get; }
 
-    public object? this[string memberName]
+    /// <summary>
+    /// Retrieves the value of provided field.
+    /// </summary>
+    /// <param name="memberName">The name of the field.</param>
+    /// <returns>
+    /// For primitive types like <seealso cref="int"/> and <seealso cref="string"/> returns their value,
+    /// for arrays of such types returns the arrays,
+    /// for other types returns <seealso cref="ClassRecord"/> or <seealso cref="ArrayRecord{T}"/>.
+    /// </returns>
+    /// <exception cref="KeyNotFoundException">Member of such name does not exist.</exception>
+    public virtual object? this[string memberName]
     {
         get
         {

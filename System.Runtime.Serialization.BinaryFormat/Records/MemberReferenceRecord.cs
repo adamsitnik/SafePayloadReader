@@ -15,6 +15,8 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class MemberReferenceRecord : SerializationRecord
 {
+    // This type has no Id, so it's impossible to create a reference to a reference
+    // and get into issues with cycles or unbounded recursion.
     private MemberReferenceRecord(int reference, Dictionary<int, SerializationRecord> recordMap)
     {
         Reference = reference;
@@ -27,10 +29,12 @@ internal sealed class MemberReferenceRecord : SerializationRecord
 
     private Dictionary<int, SerializationRecord> RecordMap { get; }
 
-    public override object? GetValue() => RecordMap[Reference].GetValue();
+    internal override object? GetValue() => GetReferencedRecord().GetValue();
 
     public override bool IsSerializedInstanceOf(Type type) => RecordMap[Reference].IsSerializedInstanceOf(type);
 
     internal static MemberReferenceRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
         => new(reader.ReadInt32(), recordMap);
+
+    internal SerializationRecord GetReferencedRecord() => RecordMap[Reference];
 }

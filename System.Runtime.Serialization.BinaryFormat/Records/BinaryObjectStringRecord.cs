@@ -14,9 +14,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class BinaryObjectStringRecord : SerializationRecord
 {
-    internal static readonly BinaryObjectStringRecord NullString = new(-1, null);
-
-    private BinaryObjectStringRecord(int objectId, string? value)
+    private BinaryObjectStringRecord(int objectId, string value)
     {
         Id = objectId;
         Value = value;
@@ -26,11 +24,11 @@ internal sealed class BinaryObjectStringRecord : SerializationRecord
 
     internal override int Id { get; }
 
-    internal string? Value { get; }
+    internal string Value { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string);
 
-    public override object? GetValue() => Value;
+    internal override object GetValue() => Value;
 
     internal static BinaryObjectStringRecord Parse(BinaryReader reader)
         => new(reader.ReadInt32(), reader.ReadString());

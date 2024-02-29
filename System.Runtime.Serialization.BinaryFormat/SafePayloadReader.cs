@@ -4,15 +4,127 @@ using System.Text;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
-public class SafePayloadReader
+public static class SafePayloadReader
 {
-    private readonly List<SerializationRecord> _records;
+    public static string ReadString(Stream stream, bool leaveOpen = false)
+    {
+        var result = (BinaryObjectStringRecord)Read(stream, leaveOpen);
+        return result.Value;
+    }
 
-    private SafePayloadReader(List<SerializationRecord> records) => _records = records;
+    public static ClassRecord ReadClassRecord<T>(Stream stream, bool leaveOpen = false)
+        where T : class
+    {
+        if (typeof(T) == typeof(string))
+        {
+            throw new ArgumentException("Use ReadString method instead");
+        }
+        else if (typeof(T).IsArray)
+        {
+            throw new ArgumentException("Use one of the ReadArray* methods instead");
+        }
 
-    public IReadOnlyList<SerializationRecord> Records => _records;
+        var result = (ClassRecord)Read(stream, leaveOpen);
+        if (!result.IsSerializedInstanceOf(typeof(T)))
+        {
+            throw new SerializationException();
+        }
+        return result;
+    }
 
-    public static SafePayloadReader Read(Stream stream, bool leaveOpen = false)
+    /// <exception cref="NotSupportedException">For <seealso cref="System.Half"/> and other primitive types that are not supported by the Binary Formatter itself.</exception>
+    public static T ReadPrimitiveType<T>(Stream stream, bool leaveOpen = false)
+        where T : unmanaged
+    {
+        ThrowForUnsupportedPrimitiveType<T>();
+
+        var result = (SystemClassWithMembersAndTypesRecord)Read(stream, leaveOpen);
+        if (!result.IsSerializedInstanceOf(typeof(T)))
+        {
+            throw new SerializationException();
+        }
+        else if (typeof(T) == typeof(DateTime))
+        {
+            long raw = (long)result.MemberValues[0]!;
+            return (T)(object)SerializationRecord.CreateDateTimeFromData(raw);
+        }
+        else if (typeof(T) == typeof(TimeSpan))
+        {
+            long raw = (long)result.MemberValues[0]!;
+            return (T)(object)new TimeSpan(raw);
+        }
+        else if (typeof(T) == typeof(decimal))
+        {
+            int[] bits =
+            [
+                (int)result["lo"]!,
+                (int)result["mid"]!,
+                (int)result["hi"]!,
+                (int)result["flags"]!
+            ];
+
+            return (T)(object)new decimal(bits);
+        }
+        else if (typeof (T) == typeof(IntPtr))
+        {
+            long raw = (long)result.MemberValues[0]!;
+            return (T)(object)new IntPtr(raw);
+        }
+        else if (typeof(T) == typeof(UIntPtr))
+        {
+            ulong raw = (ulong)result.MemberValues[0]!;
+            return (T)(object)new UIntPtr(raw);
+        }
+
+        return (T)result.MemberValues[0]!;
+    }
+
+    /// <exception cref="NotSupportedException">For <seealso cref="System.Half"/> and other primitive types that are not supported by the Binary Formatter itself.</exception>
+    public static T[] ReadArrayOfPrimitiveType<T>(Stream stream, bool leaveOpen = false)
+        where T : unmanaged
+    {
+        ThrowForUnsupportedPrimitiveType<T>();
+
+        var result = (ArraySinglePrimitiveRecord<T>)Read(stream, leaveOpen);
+        return result.Values;
+    }
+
+    private static void ThrowForUnsupportedPrimitiveType<T>() where T : unmanaged
+    {
+        // a very weird way of performing typeof(T) == typeof(Half) check in NS2.0
+        if (!(typeof(T) == typeof(bool) || typeof(T) == typeof(char)
+            || typeof(T) == typeof(byte) || typeof(T) == typeof(sbyte)
+            || typeof(T) == typeof(short) || typeof(T) == typeof(ushort)
+            || typeof(T) == typeof(int) || typeof(T) == typeof(uint)
+            || typeof(T) == typeof(long) || typeof(T) == typeof(ulong)
+            || typeof(T) == typeof(IntPtr) || typeof(T) == typeof(UIntPtr)
+            || typeof(T) == typeof(float) || typeof(T) == typeof(double)
+            || typeof(T) == typeof(decimal)
+            || typeof(T) == typeof(DateTime) || typeof(T) == typeof(TimeSpan)))
+        {
+            throw new NotSupportedException($"Type {typeof(T)} is not supported by the Binary Format.");
+        }
+    }
+
+    public static string?[] ReadArrayOfStrings(Stream stream, bool leaveOpen = false)
+    {
+        var result = (ArrayRecord<string?>)Read(stream, leaveOpen);
+        return result.Values;
+    }
+
+    public static object?[] ReadArrayOfObjects(Stream stream, bool leaveOpen = false)
+    {
+        var result = (ArrayRecord<object?>)Read(stream, leaveOpen);
+        return result.Values;
+    }
+
+    public static ClassRecord?[] ReadArrayOfClassRecords(Stream stream, bool leaveOpen = false)
+    {
+        var result = (ArrayRecord<ClassRecord?>)Read(stream, leaveOpen);
+        return result.Values;
+    }
+
+    public static SerializationRecord Read(Stream stream, bool leaveOpen = false)
     {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
@@ -20,10 +132,8 @@ public class SafePayloadReader
         return Read(reader);
     }
 
-    public static SafePayloadReader Read(BinaryReader reader)
+    private static SerializationRecord Read(BinaryReader reader)
     {
-        if (reader is null) throw new ArgumentNullException(nameof(reader));
-
         List<SerializationRecord> records = new();
         Dictionary<int, SerializationRecord> recordMap = new();
 
@@ -33,7 +143,7 @@ public class SafePayloadReader
             records.Add(ReadNext(reader, recordMap, out recordType));
         } while (recordType != RecordType.MessageEnd);
 
-        return new(records);
+        return recordMap[1]; // top level record always has Id == 1
     }
 
     internal static SerializationRecord ReadNext(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap, out RecordType recordType)
@@ -63,24 +173,12 @@ public class SafePayloadReader
             _ => throw new NotSupportedException("Remote invocation is not supported by design")
         };
 
-        if (record.Id >= 0)
+        if (record.Id >= 1)
         {
+            // use Add on purpose, so in case of duplicate Ids we get an exception
             recordMap.Add(record.Id, record);
         }
 
         return record;
-    }
-
-    public SerializationRecord GetTopLevel<T>()
-    {
-        foreach (SerializationRecord record in Records)
-        {
-            if (record.IsSerializedInstanceOf(typeof(T)))
-            {
-                return record;
-            }
-        }
-
-        throw new KeyNotFoundException();
     }
 }
