@@ -143,7 +143,7 @@ public static class SafePayloadReader
             records.Add(ReadNext(reader, recordMap, out recordType));
         } while (recordType != RecordType.MessageEnd);
 
-        return recordMap[1]; // top level record always has Id == 1
+        return recordMap[1]; // top level record always has ObjectId == 1
     }
 
     internal static SerializationRecord ReadNext(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap, out RecordType recordType)
@@ -173,10 +173,13 @@ public static class SafePayloadReader
             _ => throw new NotSupportedException("Remote invocation is not supported by design")
         };
 
-        if (record.Id >= 1)
+        // From https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nrbf/0a192be0-58a1-41d0-8a54-9c91db0ab7bf:
+        // "If the ObjectId is not referenced by any MemberReference in the serialization stream,
+        // then the ObjectId SHOULD be positive, but MAY be negative."
+        if (record.ObjectId != SerializationRecord.NoId)
         {
             // use Add on purpose, so in case of duplicate Ids we get an exception
-            recordMap.Add(record.Id, record);
+            recordMap.Add(record.ObjectId, record);
         }
 
         return record;

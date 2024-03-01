@@ -17,7 +17,7 @@ internal sealed class LazyClassRecord : ClassRecord
 
     public override IReadOnlyList<string> MemberNames => GetClassRecord().MemberNames;
 
-    internal override int Id => GetClassRecord().Id;
+    internal override int ObjectId => GetClassRecord().ObjectId;
 
     internal override object[] MemberValues => GetClassRecord().MemberValues;
 

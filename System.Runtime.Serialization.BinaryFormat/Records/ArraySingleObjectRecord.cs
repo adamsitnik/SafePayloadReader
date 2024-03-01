@@ -14,7 +14,7 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
     public override RecordType RecordType => RecordType.ArraySingleObject;
 
-    internal override int Id => ArrayInfo.ObjectId;
+    internal override int ObjectId => ArrayInfo.ObjectId;
 
     internal ArrayInfo ArrayInfo { get; }
 

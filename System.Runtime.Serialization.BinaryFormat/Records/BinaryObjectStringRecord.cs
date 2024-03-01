@@ -16,13 +16,13 @@ internal sealed class BinaryObjectStringRecord : SerializationRecord
 {
     private BinaryObjectStringRecord(int objectId, string value)
     {
-        Id = objectId;
+        ObjectId = objectId;
         Value = value;
     }
 
     public override RecordType RecordType => RecordType.BinaryObjectString;
 
-    internal override int Id { get; }
+    internal override int ObjectId { get; }
 
     internal string Value { get; }
 

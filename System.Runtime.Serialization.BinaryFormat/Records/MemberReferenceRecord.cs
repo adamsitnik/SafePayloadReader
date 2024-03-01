@@ -15,7 +15,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class MemberReferenceRecord : SerializationRecord
 {
-    // This type has no Id, so it's impossible to create a reference to a reference
+    // This type has no ObjectId, so it's impossible to create a reference to a reference
     // and get into issues with cycles or unbounded recursion.
     private MemberReferenceRecord(int reference, Dictionary<int, SerializationRecord> recordMap)
     {

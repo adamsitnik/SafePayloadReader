@@ -17,11 +17,11 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
     where T : unmanaged
 {
-    internal ArraySinglePrimitiveRecord(int id, T[] values) : base(values) => Id = id;
+    internal ArraySinglePrimitiveRecord(int id, T[] values) : base(values) => ObjectId = id;
 
     public override RecordType RecordType => RecordType.ArraySinglePrimitive;
 
-    internal override int Id { get; }
+    internal override int ObjectId { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 

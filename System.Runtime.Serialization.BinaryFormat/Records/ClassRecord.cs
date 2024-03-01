@@ -21,9 +21,11 @@ public abstract class ClassRecord : SerializationRecord
         MemberValues = memberValues;
     }
 
+    public string TypeName => ClassInfo.Name;
+
     public virtual IReadOnlyList<string> MemberNames => ClassInfo.MemberNames;
 
-    internal override int Id => ClassInfo.ObjectId;
+    internal override int ObjectId => ClassInfo.ObjectId;
 
     internal virtual ClassInfo ClassInfo { get; }
 

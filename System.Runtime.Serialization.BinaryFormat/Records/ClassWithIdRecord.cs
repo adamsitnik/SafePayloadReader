@@ -18,12 +18,12 @@ internal sealed class ClassWithIdRecord : ClassRecord
     private ClassWithIdRecord(int objectId, ClassRecord metadataClass, object[] memberValues)
         : base(metadataClass.ClassInfo, memberValues)
     {
-        Id = objectId;
+        ObjectId = objectId;
     }
 
     public override RecordType RecordType => RecordType.ClassWithId;
 
-    internal override int Id { get; }
+    internal override int ObjectId { get; }
 
     internal static ClassWithIdRecord Parse(
         BinaryReader reader,

@@ -23,7 +23,8 @@ internal sealed class SystemClassWithMembersRecord : ClassRecord
     public override RecordType RecordType => RecordType.SystemClassWithMembers;
 
     public override bool IsSerializedInstanceOf(Type type)
-        => type.Assembly == typeof(object).Assembly && type.FullName == ClassInfo.Name;
+        => type.Assembly == typeof(object).Assembly
+        && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
 
     internal static SystemClassWithMembersRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
     {

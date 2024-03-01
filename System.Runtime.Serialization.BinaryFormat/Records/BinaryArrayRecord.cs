@@ -16,7 +16,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 
     public override RecordType RecordType => RecordType.BinaryArray;
 
-    internal override int Id => ArrayInfo.ObjectId;
+    internal override int ObjectId => ArrayInfo.ObjectId;
 
     internal ArrayInfo ArrayInfo { get; }
 

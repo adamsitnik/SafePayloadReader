@@ -7,13 +7,15 @@ namespace System.Runtime.Serialization.BinaryFormat;
 
 public abstract class SerializationRecord
 {
+    internal const int NoId = 0;
+
     internal SerializationRecord() // others can't derive from this type
     {
     }
 
     public abstract RecordType RecordType { get; }
 
-    internal virtual int Id => -1;
+    internal virtual int ObjectId => NoId;
 
     public virtual bool IsSerializedInstanceOf(Type type) => false;
 

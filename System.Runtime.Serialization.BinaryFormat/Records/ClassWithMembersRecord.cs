@@ -26,8 +26,8 @@ internal sealed class ClassWithMembersRecord : ClassRecord
     internal BinaryLibraryRecord Library { get; }
 
     public override bool IsSerializedInstanceOf(Type type)
-        => type.FullName == ClassInfo.Name
-        && type.Assembly.FullName == Library.LibraryName; // TODO: handle type forwarding
+        => FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name
+        && FormatterServices.GetAssemblyNameIncludingTypeForwards(type) == Library.LibraryName;
 
     internal static ClassWithMembersRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
     {

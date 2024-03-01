@@ -15,11 +15,11 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private ArraySingleStringRecord(int objectId, string?[] values) : base(values) => Id = objectId;
+    private ArraySingleStringRecord(int objectId, string?[] values) : base(values) => ObjectId = objectId;
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
-    internal override int Id { get; }
+    internal override int ObjectId { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
 
