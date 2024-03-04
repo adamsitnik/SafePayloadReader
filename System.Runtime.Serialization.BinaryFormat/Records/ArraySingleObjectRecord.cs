@@ -3,6 +3,16 @@ using System.IO;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
+/// <summary>
+///  Single dimensional array of objects.
+/// </summary>
+/// <remarks>
+///  <para>
+///   <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/982b2f50-6367-402a-aaf2-44ee96e2a5e0">
+///    [MS-NRBF] 2.4.3.2
+///   </see>
+///  </para>
+/// </remarks>
 internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 {
     private ArraySingleObjectRecord(ArrayInfo arrayInfo, SerializationRecord[] records)
@@ -27,7 +37,12 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
     internal static ArraySingleObjectRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
     {
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
-        SerializationRecord[] records = ReadRecords(reader, recordMap, arrayInfo.Length);
+
+        // An array of object can contain any Data, which is everything beside SerializedStreamHeader and MessageEnd.
+        const AllowedRecordTypes allowed = AllowedRecordTypes.AnyData;
+
+        // TODO: remove unbounded recursion
+        SerializationRecord[] records = ReadRecords(reader, recordMap, arrayInfo.Length, allowed);
 
         return new(arrayInfo, records);
     }

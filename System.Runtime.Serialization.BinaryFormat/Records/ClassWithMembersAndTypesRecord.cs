@@ -38,6 +38,8 @@ internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
         ClassInfo classInfo = ClassInfo.Parse(reader);
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Length);
         int libraryId = reader.ReadInt32();
+
+        // TODO: remove unbounded recursion
         object[] values = memberTypeInfo.ReadValues(reader, recordMap);
 
         BinaryLibraryRecord library = (BinaryLibraryRecord)recordMap[libraryId];

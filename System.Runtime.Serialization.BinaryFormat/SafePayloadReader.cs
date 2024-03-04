@@ -137,18 +137,29 @@ public static class SafePayloadReader
         List<SerializationRecord> records = new();
         Dictionary<int, SerializationRecord> recordMap = new();
 
+        // Everything has to start with a header
+        records.Add(ReadNext(reader, recordMap, AllowedRecordTypes.SerializedStreamHeader, out _));
+        // and can be followed by any Data and a MessageEnd
+        const AllowedRecordTypes allowed = AllowedRecordTypes.AnyData | AllowedRecordTypes.MessageEnd;
+
         RecordType recordType;
         do
         {
-            records.Add(ReadNext(reader, recordMap, out recordType));
+            records.Add(ReadNext(reader, recordMap, allowed, out recordType));
         } while (recordType != RecordType.MessageEnd);
 
         return recordMap[1]; // top level record always has ObjectId == 1
     }
 
-    internal static SerializationRecord ReadNext(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap, out RecordType recordType)
+    internal static SerializationRecord ReadNext(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap,
+        AllowedRecordTypes allowed, out RecordType recordType)
     {
         recordType = (RecordType)reader.ReadByte();
+
+        if (((uint)allowed & (1u << (int)recordType)) == 0)
+        {
+            throw new SerializationException($"Unexpected type seen: {recordType}.");
+        }
 
         SerializationRecord record = recordType switch
         {
@@ -170,7 +181,11 @@ public static class SafePayloadReader
             RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
             RecordType.SystemClassWithMembers => SystemClassWithMembersRecord.Parse(reader, recordMap),
             RecordType.SystemClassWithMembersAndTypes => SystemClassWithMembersAndTypesRecord.Parse(reader, recordMap),
-            _ => throw new NotSupportedException("Remote invocation is not supported by design")
+            RecordType.CrossAppDomainAssembly or RecordType.CrossAppDomainMap or RecordType.CrossAppDomainString
+                => throw new NotSupportedException("Cross domain is not supported by design"),
+            RecordType.MethodCall or RecordType.MethodReturn 
+                => throw new NotSupportedException("Remote invocation is not supported by design"),
+            _ => throw new SerializationException($"Invalid RecordType value: {recordType}")
         };
 
         // From https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-nrbf/0a192be0-58a1-41d0-8a54-9c91db0ab7bf:

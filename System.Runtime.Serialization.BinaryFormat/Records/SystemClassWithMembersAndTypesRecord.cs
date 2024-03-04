@@ -25,6 +25,8 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
         ClassInfo classInfo = ClassInfo.Parse(reader);
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Length);
         // the only difference with ClassWithMembersAndTypesRecord is that we don't read library id here
+
+        // TODO: remove unbounded recursion
         object[] values = memberTypeInfo.ReadValues(reader, recordMap);
 
         return new(classInfo, memberTypeInfo, values);

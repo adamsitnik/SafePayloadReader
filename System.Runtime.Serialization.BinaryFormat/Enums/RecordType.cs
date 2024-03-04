@@ -31,15 +31,19 @@ public enum RecordType : byte
     ArraySingleObject,
     ArraySingleString,
 
-    /// <summary>
-    ///  Used for remote method invocation. <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/4c727b2f-2c30-468d-b12e-b56406f14862">
-    ///  [MS-NRBF] 2.2</see>
-    /// </summary>
-    MethodCall,
+    CrossAppDomainMap = 18, // 18~20 are from the reference source but aren't in the OpenSpecs doc
+    CrossAppDomainString = 19,
+    CrossAppDomainAssembly = 20,
 
     /// <summary>
     ///  Used for remote method invocation. <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/4c727b2f-2c30-468d-b12e-b56406f14862">
     ///  [MS-NRBF] 2.2</see>
     /// </summary>
-    MethodReturn
+    MethodCall = 21,
+
+    /// <summary>
+    ///  Used for remote method invocation. <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/4c727b2f-2c30-468d-b12e-b56406f14862">
+    ///  [MS-NRBF] 2.2</see>
+    /// </summary>
+    MethodReturn = 22
 }

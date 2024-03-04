@@ -32,13 +32,12 @@ public abstract class SerializationRecord
         object? typeInfo) => type switch
         {
             BinaryType.Primitive => ReadPrimitiveType(reader, (PrimitiveType)typeInfo!),
-            BinaryType.String
-                or BinaryType.Object
-                or BinaryType.StringArray
-                or BinaryType.PrimitiveArray
-                or BinaryType.Class
-                or BinaryType.SystemClass
-                or BinaryType.ObjectArray => SafePayloadReader.ReadNext(reader, recordMap, out _),
+            BinaryType.String => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.ObjectNull, out _),
+            BinaryType.Object => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.Classes, out _),
+            BinaryType.StringArray => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.ArraySingleString | AllowedRecordTypes.MemberReference, out _),
+            BinaryType.PrimitiveArray => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.ArraySinglePrimitive | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference, out _),
+            BinaryType.Class or BinaryType.SystemClass => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.MemberReferences | AllowedRecordTypes.Nulls, out _),
+            BinaryType.ObjectArray => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.ArraySingleObject | AllowedRecordTypes.MemberReference, out _),
             _ => throw new SerializationException("Invalid binary type."),
         };
 
@@ -95,12 +94,12 @@ public abstract class SerializationRecord
     }
 
     private protected static SerializationRecord[] ReadRecords(BinaryReader reader, 
-        Dictionary<int, SerializationRecord> recordMap, int recordCount)
+        Dictionary<int, SerializationRecord> recordMap, int recordCount, AllowedRecordTypes allowed = AllowedRecordTypes.AnyData)
     {
         SerializationRecord[] records = new SerializationRecord[recordCount];
         for (int i = 0; i < records.Length;)
         {
-            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordMap, out _);
+            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordMap, allowed, out _);
 
             Insert(records, ref i, record, ObjectNullRecord.Instance);
         }

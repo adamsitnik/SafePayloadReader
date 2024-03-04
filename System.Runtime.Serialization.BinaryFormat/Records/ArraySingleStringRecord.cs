@@ -30,18 +30,25 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
 
         string?[] values = new string?[arrayInfo.Length];
+        // An array of string can consist of string(s) and null(s)
+        AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
 
         for (int i = 0; i < arrayInfo.Length;)
         {
-            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, out RecordType recordType);
+            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, allowedTypes, out _);
 
             if (record is BinaryObjectStringRecord stringRecord)
             {
                 values[i++] = stringRecord.Value;
+
+                allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
             }
-            else if (Insert(values, ref i, record, null) < 0)
+            else
             {
-                throw new SerializationException($"Unexpected record type {recordType}");
+                Insert(values, ref i, record, null);
+
+                // A null record can not be followed by another null record
+                allowedTypes = AllowedRecordTypes.BinaryObjectString;
             }
         }
 
