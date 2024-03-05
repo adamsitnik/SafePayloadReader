@@ -27,7 +27,7 @@ public abstract class SerializationRecord
     /// <exception cref="SerializationException"><paramref name="type"/> was unexpected.</exception>
     internal static object ReadValue(
         BinaryReader reader,
-        Dictionary<int, SerializationRecord> recordMap,
+        RecordMap recordMap,
         BinaryType type,
         object? typeInfo) => type switch
         {
@@ -94,7 +94,7 @@ public abstract class SerializationRecord
     }
 
     private protected static SerializationRecord[] ReadRecords(BinaryReader reader, 
-        Dictionary<int, SerializationRecord> recordMap, int recordCount, AllowedRecordTypes allowed = AllowedRecordTypes.AnyData)
+        RecordMap recordMap, int recordCount, AllowedRecordTypes allowed = AllowedRecordTypes.AnyData)
     {
         SerializationRecord[] records = new SerializationRecord[recordCount];
         for (int i = 0; i < records.Length;)

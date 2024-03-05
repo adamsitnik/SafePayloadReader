@@ -25,7 +25,7 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 
     internal override object GetValue() => Values;
 
-    internal static ArraySingleStringRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordsMap)
+    internal static ArraySingleStringRecord Parse(BinaryReader reader, RecordMap recordsMap)
     {
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
 

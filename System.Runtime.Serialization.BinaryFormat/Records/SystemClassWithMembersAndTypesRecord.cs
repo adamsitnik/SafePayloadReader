@@ -20,7 +20,7 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
         && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
 
     internal static SystemClassWithMembersAndTypesRecord Parse(
-        BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
+        BinaryReader reader, RecordMap recordMap)
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Length);

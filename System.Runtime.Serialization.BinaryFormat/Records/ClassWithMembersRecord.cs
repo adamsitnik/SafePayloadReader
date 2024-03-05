@@ -29,7 +29,7 @@ internal sealed class ClassWithMembersRecord : ClassRecord
         => FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name
         && FormatterServices.GetAssemblyNameIncludingTypeForwards(type) == Library.LibraryName;
 
-    internal static ClassWithMembersRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
+    internal static ClassWithMembersRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         int libraryId = reader.ReadInt32();

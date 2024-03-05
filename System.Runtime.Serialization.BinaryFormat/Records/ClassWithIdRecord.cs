@@ -27,7 +27,7 @@ internal sealed class ClassWithIdRecord : ClassRecord
 
     internal static ClassWithIdRecord Parse(
         BinaryReader reader,
-        Dictionary<int, SerializationRecord> recordMap)
+        RecordMap recordMap)
     {
         int objectId = reader.ReadInt32();
         int metadataId = reader.ReadInt32();

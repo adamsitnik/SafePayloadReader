@@ -26,7 +26,7 @@ internal sealed class SystemClassWithMembersRecord : ClassRecord
         => type.Assembly == typeof(object).Assembly
         && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
 
-    internal static SystemClassWithMembersRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
+    internal static SystemClassWithMembersRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         // the only difference with ClassWithMembersRecord is that we don't read library id here

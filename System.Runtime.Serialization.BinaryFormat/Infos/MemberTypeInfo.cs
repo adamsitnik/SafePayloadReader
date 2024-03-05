@@ -63,7 +63,7 @@ internal readonly struct MemberTypeInfo
         return new MemberTypeInfo(info);
     }
 
-    internal object[] ReadValues(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
+    internal object[] ReadValues(BinaryReader reader, RecordMap recordMap)
     {
         object[] memberValues = new object[Infos.Length];
 

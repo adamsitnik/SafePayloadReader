@@ -31,7 +31,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 
     internal override object GetValue() => Values;
 
-    internal static BinaryArrayRecord Parse(BinaryReader reader, Dictionary<int, SerializationRecord> recordMap)
+    internal static BinaryArrayRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
         int objectId = reader.ReadInt32();
         BinaryArrayType arrayType = (BinaryArrayType)reader.ReadByte();
