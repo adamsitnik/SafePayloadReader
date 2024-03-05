@@ -19,7 +19,7 @@ internal sealed class LazyClassRecord : ClassRecord
 
     internal override int ObjectId => GetClassRecord().ObjectId;
 
-    internal override object[] MemberValues => GetClassRecord().MemberValues;
+    internal override IReadOnlyList<object> MemberValues => GetClassRecord().MemberValues;
 
     private MemberReferenceRecord ReferenceRecord { get; }
 

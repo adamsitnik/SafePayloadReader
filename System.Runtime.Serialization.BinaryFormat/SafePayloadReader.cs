@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -87,7 +88,7 @@ public static class SafePayloadReader
         ThrowForUnsupportedPrimitiveType<T>();
 
         var result = (ArraySinglePrimitiveRecord<T>)Read(stream, leaveOpen);
-        return result.Values;
+        return result.Values.ToArray();
     }
 
     private static void ThrowForUnsupportedPrimitiveType<T>() where T : unmanaged
@@ -110,19 +111,19 @@ public static class SafePayloadReader
     public static string?[] ReadArrayOfStrings(Stream stream, bool leaveOpen = false)
     {
         var result = (ArrayRecord<string?>)Read(stream, leaveOpen);
-        return result.Values;
+        return result.Values.ToArray();
     }
 
     public static object?[] ReadArrayOfObjects(Stream stream, bool leaveOpen = false)
     {
         var result = (ArrayRecord<object?>)Read(stream, leaveOpen);
-        return result.Values;
+        return result.Values.ToArray();
     }
 
     public static ClassRecord?[] ReadArrayOfClassRecords(Stream stream, bool leaveOpen = false)
     {
         var result = (ArrayRecord<ClassRecord?>)Read(stream, leaveOpen);
-        return result.Values;
+        return result.Values.ToArray();
     }
 
     /// <summary>

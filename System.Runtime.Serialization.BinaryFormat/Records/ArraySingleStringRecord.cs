@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -15,7 +16,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private ArraySingleStringRecord(int objectId, string?[] values) : base(values) => ObjectId = objectId;
+    private ArraySingleStringRecord(int objectId, List<string?> values) : base(values) => ObjectId = objectId;
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
@@ -23,29 +24,29 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
 
-    internal override object GetValue() => Values;
+    internal override object GetValue() => Values.ToArray();
 
     internal static ArraySingleStringRecord Parse(BinaryReader reader, RecordMap recordsMap)
     {
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
 
-        string?[] values = new string?[arrayInfo.Length];
+        List<string?> values = new();
         // An array of string can consist of string(s) and null(s)
         AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
 
-        for (int i = 0; i < arrayInfo.Length;)
+        while (values.Count < arrayInfo.Length)
         {
             SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, allowedTypes, out _);
 
             if (record is BinaryObjectStringRecord stringRecord)
             {
-                values[i++] = stringRecord.Value;
+                values.Add(stringRecord.Value);
 
                 allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
             }
             else
             {
-                Insert(values, ref i, record, null);
+                Insert(values, arrayInfo.Length, record, null);
 
                 // A null record can not be followed by another null record
                 allowedTypes = AllowedRecordTypes.BinaryObjectString;

@@ -93,20 +93,20 @@ public abstract class SerializationRecord
         return Unsafe.As<long, DateTime>(ref data);
     }
 
-    private protected static SerializationRecord[] ReadRecords(BinaryReader reader, 
+    private protected static List<SerializationRecord> ReadRecords(BinaryReader reader, 
         RecordMap recordMap, int recordCount, AllowedRecordTypes allowed = AllowedRecordTypes.AnyData)
     {
-        SerializationRecord[] records = new SerializationRecord[recordCount];
-        for (int i = 0; i < records.Length;)
+        List<SerializationRecord> records = new();
+        while (records.Count < recordCount)
         {
             SerializationRecord record = SafePayloadReader.ReadNext(reader, recordMap, allowed, out _);
 
-            Insert(records, ref i, record, ObjectNullRecord.Instance);
+            Insert(records!, recordCount, record, ObjectNullRecord.Instance);
         }
         return records;
     }
 
-    private protected static int Insert<T>(T?[] values, ref int index, object value, T? nullValue)
+    private protected static int Insert<T>(List<T?> values, int targetCount, object value, T? nullValue)
     {
         int nullCount = value switch
         {
@@ -118,20 +118,20 @@ public abstract class SerializationRecord
 
         if (nullCount > 0)
         {
-            if (index + nullCount > values.Length)
+            if (values.Count + nullCount > targetCount)
             {
                 throw new SerializationException($"Unexpected Null Record count: {nullCount}.");
             }
 
             do
             {
-                values[index++] = nullValue;
+                values.Add(nullValue);
                 nullCount--;
             } while (nullCount > 0);
         }
         else
         {
-            values[index++] = (T)value;
+            values.Add((T)value);
         }
 
         return nullCount;

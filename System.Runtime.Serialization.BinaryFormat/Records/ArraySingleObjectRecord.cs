@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -15,7 +16,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 {
-    private ArraySingleObjectRecord(ArrayInfo arrayInfo, SerializationRecord[] records)
+    private ArraySingleObjectRecord(ArrayInfo arrayInfo, List<SerializationRecord> records)
         : base(Map(records))
     {
         ArrayInfo = arrayInfo;
@@ -28,11 +29,11 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
     internal ArrayInfo ArrayInfo { get; }
 
-    internal SerializationRecord[] Records { get; }
+    internal IReadOnlyList<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
-    internal override object GetValue() => Values;
+    internal override object GetValue() => Values.ToArray();
 
     internal static ArraySingleObjectRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
@@ -42,15 +43,15 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
         const AllowedRecordTypes allowed = AllowedRecordTypes.AnyData;
 
         // TODO: remove unbounded recursion
-        SerializationRecord[] records = ReadRecords(reader, recordMap, arrayInfo.Length, allowed);
+        List<SerializationRecord> records = ReadRecords(reader, recordMap, arrayInfo.Length, allowed);
 
         return new(arrayInfo, records);
     }
 
-    private static object?[] Map(SerializationRecord[] records)
+    private static object?[] Map(List<SerializationRecord> records)
     {
-        object?[] values = new object?[records.Length];
-        for (int i = 0; i < records.Length; i++)
+        object?[] values = new object?[records.Count];
+        for (int i = 0; i < records.Count; i++)
         {
             values[i] = records[i].GetValue();
         }

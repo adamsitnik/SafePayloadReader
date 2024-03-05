@@ -16,7 +16,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
 {
     private ClassWithMembersAndTypesRecord(ClassInfo classInfo, BinaryLibraryRecord library,
-        MemberTypeInfo memberTypeInfo, object[] memberValues)
+        MemberTypeInfo memberTypeInfo, IReadOnlyList<object> memberValues)
         : base(classInfo, memberValues)
     {
         Library = library;
@@ -36,11 +36,11 @@ internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
     internal static ClassWithMembersAndTypesRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
-        MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Length);
+        MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Count);
         int libraryId = reader.ReadInt32();
 
         // TODO: remove unbounded recursion
-        object[] values = memberTypeInfo.ReadValues(reader, recordMap);
+        IReadOnlyList<object> values = memberTypeInfo.ReadValues(reader, recordMap);
 
         BinaryLibraryRecord library = (BinaryLibraryRecord)recordMap[libraryId];
 

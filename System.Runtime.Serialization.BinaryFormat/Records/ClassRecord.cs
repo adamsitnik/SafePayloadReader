@@ -15,7 +15,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 public abstract class ClassRecord : SerializationRecord
 {
-    private protected ClassRecord(ClassInfo classInfo, object[] memberValues)
+    private protected ClassRecord(ClassInfo classInfo, IReadOnlyList<object> memberValues)
     {
         ClassInfo = classInfo;
         MemberValues = memberValues;
@@ -29,7 +29,7 @@ public abstract class ClassRecord : SerializationRecord
 
     internal virtual ClassInfo ClassInfo { get; }
 
-    internal virtual object[] MemberValues { get; }
+    internal virtual IReadOnlyList<object> MemberValues { get; }
 
     /// <summary>
     /// Retrieves the value of provided field.
@@ -45,7 +45,7 @@ public abstract class ClassRecord : SerializationRecord
     {
         get
         {
-            int index = Array.IndexOf(ClassInfo.MemberNames, memberName);
+            int index = IndexOf(ClassInfo.MemberNames, memberName);
             if (index < 0)
             {
                 throw new KeyNotFoundException();
@@ -58,5 +58,18 @@ public abstract class ClassRecord : SerializationRecord
             }
             return value;
         }
+    }
+
+    private static int IndexOf(IReadOnlyList<string> memberNames, string memberName)
+    {
+        for (int i = 0; i < memberNames.Count; i++)
+        {
+            if (memberNames[i] == memberName)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }

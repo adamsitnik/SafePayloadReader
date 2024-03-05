@@ -1,8 +1,10 @@
-﻿namespace System.Runtime.Serialization.BinaryFormat;
+﻿using System.Collections.Generic;
+
+namespace System.Runtime.Serialization.BinaryFormat;
 
 public abstract class ArrayRecord<T> : SerializationRecord
 {
-    private protected ArrayRecord(T[] values) => Values = values;
+    private protected ArrayRecord(IReadOnlyList<T> values) => Values = values;
 
     /// <summary>
     ///  Returns the item at the given index.
@@ -12,7 +14,7 @@ public abstract class ArrayRecord<T> : SerializationRecord
     /// <summary>
     ///  Length of the array.
     /// </summary>
-    public int Length => Values.Length;
+    public int Length => Values.Count;
 
-    internal T[] Values { get; }
+    internal IReadOnlyList<T> Values { get; }
 }

@@ -15,7 +15,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ClassWithMembersRecord : ClassRecord
 {
-    private ClassWithMembersRecord(ClassInfo classInfo, BinaryLibraryRecord library, object[] memberValues) 
+    private ClassWithMembersRecord(ClassInfo classInfo, BinaryLibraryRecord library, List<SerializationRecord> memberValues) 
         : base(classInfo, memberValues)
     {
         Library = library;
@@ -33,7 +33,7 @@ internal sealed class ClassWithMembersRecord : ClassRecord
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         int libraryId = reader.ReadInt32();
-        object[] memberValues = ReadRecords(reader, recordMap, classInfo.MemberNames.Length);
+        List<SerializationRecord> memberValues = ReadRecords(reader, recordMap, classInfo.MemberNames.Count);
 
         BinaryLibraryRecord library = (BinaryLibraryRecord)recordMap[libraryId];
 

@@ -15,7 +15,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class SystemClassWithMembersRecord : ClassRecord
 {
-    private SystemClassWithMembersRecord(ClassInfo classInfo, object[] memberValues)
+    private SystemClassWithMembersRecord(ClassInfo classInfo, IReadOnlyList<object> memberValues)
         : base(classInfo, memberValues)
     {
     }
@@ -30,7 +30,7 @@ internal sealed class SystemClassWithMembersRecord : ClassRecord
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         // the only difference with ClassWithMembersRecord is that we don't read library id here
-        object[] values = ReadRecords(reader, recordMap, classInfo.MemberNames.Length);
+        IReadOnlyList<object> values = ReadRecords(reader, recordMap, classInfo.MemberNames.Count);
 
         return new(classInfo, values);
     }

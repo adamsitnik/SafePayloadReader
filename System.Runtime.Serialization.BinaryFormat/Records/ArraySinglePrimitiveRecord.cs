@@ -1,6 +1,8 @@
 ﻿
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -17,7 +19,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
     where T : unmanaged
 {
-    internal ArraySinglePrimitiveRecord(int id, T[] values) : base(values) => ObjectId = id;
+    internal ArraySinglePrimitiveRecord(int id, IReadOnlyList<T> values) : base(values) => ObjectId = id;
 
     public override RecordType RecordType => RecordType.ArraySinglePrimitive;
 
@@ -25,7 +27,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 
-    internal override object GetValue() => Values;
+    internal override object GetValue() => Values.ToArray();
 
     internal static SerializationRecord Parse(BinaryReader reader)
     {
@@ -58,7 +60,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
         return record;
     }
 
-    private static T[] ReadPrimitiveTypes<T>(BinaryReader reader, int count)
+    private static IReadOnlyList<T> ReadPrimitiveTypes<T>(BinaryReader reader, int count)
         where T : unmanaged
     {
         // Special casing byte for performance.
@@ -68,64 +70,64 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
             return (T[])(object)bytes;
         }
 
-        T[] values = new T[count];
-        for (int i = 0; i < values.Length; i++)
+        List<T> values = new();
+        for (int i = 0; i < count; i++)
         {
             if (typeof(T) == typeof(bool))
             {
-                values[i] = (T)(object)reader.ReadBoolean();
+                values.Add((T)(object)reader.ReadBoolean());
             }
             else if (typeof(T) == typeof(sbyte))
             {
-                values[i] = (T)(object)reader.ReadSByte();
+                values.Add((T)(object)reader.ReadSByte());
             }
             else if (typeof(T) == typeof(char))
             {
-                values[i] = (T)(object)reader.ReadChar();
+                values.Add((T)(object)reader.ReadChar());
             }
             else if (typeof(T) == typeof(short))
             {
-                values[i] = (T)(object)reader.ReadInt16();
+                values.Add((T)(object)reader.ReadInt16());
             }
             else if (typeof(T) == typeof(ushort))
             {
-                values[i] = (T)(object)reader.ReadUInt16();
+                values.Add((T)(object)reader.ReadUInt16());
             }
             else if (typeof(T) == typeof(int))
             {
-                values[i] = (T)(object)reader.ReadInt32();
+                values.Add((T)(object)reader.ReadInt32());
             }
             else if (typeof(T) == typeof(uint))
             {
-                values[i] = (T)(object)reader.ReadUInt32();
+                values.Add((T)(object)reader.ReadUInt32());
             }
             else if (typeof(T) == typeof(long))
             {
-                values[i] = (T)(object)reader.ReadInt64();
+                values.Add((T)(object)reader.ReadInt64());
             }
             else if (typeof(T) == typeof(ulong))
             {
-                values[i] = (T)(object)reader.ReadUInt64();
+                values.Add((T)(object)reader.ReadUInt64());
             }
             else if (typeof(T) == typeof(float))
             {
-                values[i] = (T)(object)reader.ReadSingle();
+                values.Add((T)(object)reader.ReadSingle());
             }
             else if (typeof(T) == typeof(double))
             {
-                values[i] = (T)(object)reader.ReadDouble();
+                values.Add((T)(object)reader.ReadDouble());
             }
             else if (typeof(T) == typeof(decimal))
             {
-                values[i] = (T)(object)decimal.Parse(reader.ReadString(), CultureInfo.InvariantCulture);
+                values.Add((T)(object)decimal.Parse(reader.ReadString(), CultureInfo.InvariantCulture));
             }
             else if (typeof(T) == typeof(DateTime))
             {
-                values[i] = (T)(object)CreateDateTimeFromData(reader.ReadInt64());
+                values.Add((T)(object)CreateDateTimeFromData(reader.ReadInt64()));
             }
             else if (typeof(T) == typeof(TimeSpan))
             {
-                values[i] = (T)(object)new TimeSpan(reader.ReadInt64());
+                values.Add((T)(object)new TimeSpan(reader.ReadInt64()));
             }
             else
             {

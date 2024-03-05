@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 {
     internal BinaryArrayRecord(ArrayInfo arrayInfo, BinaryArrayType arrayType, int rank,
-        MemberTypeInfo memberTypeInfo, ClassRecord?[] records) : base(records)
+        MemberTypeInfo memberTypeInfo, List<ClassRecord?> records) : base(records)
     {
         ArrayInfo = arrayInfo;
         ArrayType = arrayType;
@@ -29,7 +30,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
     public override bool IsSerializedInstanceOf(Type type)
         => type.IsArray && type.GetArrayRank() == Rank; // TODO: compare the type
 
-    internal override object GetValue() => Values;
+    internal override object GetValue() => Values.ToArray();
 
     internal static BinaryArrayRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
@@ -44,10 +45,10 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
         }
 
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1);
-        ClassRecord?[] records = new ClassRecord?[length];
+        List<ClassRecord?> records = new();
         (BinaryType BinaryType, object? AdditionalInfo) = memberTypeInfo.Infos[0];
 
-        for (int i = 0; i < records.Length;)
+        while (records.Count < length)
         {
             object value = ReadValue(reader, recordMap, BinaryType, AdditionalInfo);
 
@@ -58,9 +59,9 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 
             if (value is ClassRecord classRecord)
             {
-                records[i++] = classRecord;
+                records.Add(classRecord);
             }
-            else if(Insert(records, ref i, value, null) < 0)
+            else if(Insert(records, length, value, null) < 0)
             {
                 throw new SerializationException($"Unexpected type: {value.GetType()}");
             }

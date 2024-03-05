@@ -15,7 +15,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ClassWithIdRecord : ClassRecord
 {
-    private ClassWithIdRecord(int objectId, ClassRecord metadataClass, object[] memberValues)
+    private ClassWithIdRecord(int objectId, ClassRecord metadataClass, IReadOnlyList<object> memberValues)
         : base(metadataClass.ClassInfo, memberValues)
     {
         ObjectId = objectId;
@@ -37,16 +37,16 @@ internal sealed class ClassWithIdRecord : ClassRecord
             throw new SerializationException();
         }
 
-        object[] memberValues = referencedRecord switch
+        IReadOnlyList<object> memberValues = referencedRecord switch
         {
             ClassWithMembersAndTypesRecord classWithMembersAndTypes
                 => classWithMembersAndTypes.MemberTypeInfo.ReadValues(reader, recordMap),
             SystemClassWithMembersAndTypesRecord systemClassWithMembersAndTypes
                 => systemClassWithMembersAndTypes.MemberTypeInfo.ReadValues(reader, recordMap),
             ClassWithMembersRecord classWithMembers
-                => ReadRecords(reader, recordMap, classWithMembers.MemberValues.Length),
+                => ReadRecords(reader, recordMap, classWithMembers.MemberValues.Count),
             SystemClassWithMembersRecord systemClassWithMembers
-                => ReadRecords(reader, recordMap, systemClassWithMembers.MemberValues.Length),
+                => ReadRecords(reader, recordMap, systemClassWithMembers.MemberValues.Count),
             _ => throw new SerializationException(),
         };
 
