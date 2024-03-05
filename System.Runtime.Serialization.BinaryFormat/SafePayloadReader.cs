@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 public static class SafePayloadReader
 {
+    private static readonly UTF8Encoding ThrowOnInvalidUtf8Encoding = new(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+
     public static string ReadString(Stream stream, bool leaveOpen = false)
     {
         var result = (BinaryObjectStringRecord)Read(stream, leaveOpen);
@@ -124,11 +125,19 @@ public static class SafePayloadReader
         return result.Values;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="stream"></param>
+    /// <param name="leaveOpen"></param>
+    /// <returns>Top level object.</returns>
+    /// <exception cref="ArgumentNullException">When <paramref name="stream"/> is null.</exception>
+    /// <exception cref="DecoderFallbackException">When reading input from <paramref name="stream"/> encounters invalid sequence of UTF8 characters.</exception>
     public static SerializationRecord Read(Stream stream, bool leaveOpen = false)
     {
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 
-        using BinaryReader reader = new(stream, Encoding.UTF8, leaveOpen: leaveOpen);
+        using BinaryReader reader = new(stream, ThrowOnInvalidUtf8Encoding, leaveOpen: leaveOpen);
         return Read(reader);
     }
 
