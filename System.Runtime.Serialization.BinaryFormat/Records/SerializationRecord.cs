@@ -97,43 +97,20 @@ public abstract class SerializationRecord
         RecordMap recordMap, int recordCount, AllowedRecordTypes allowed = AllowedRecordTypes.AnyData)
     {
         List<SerializationRecord> records = new();
-        while (records.Count < recordCount)
+
+        while (recordCount > 0)
         {
             SerializationRecord record = SafePayloadReader.ReadNext(reader, recordMap, allowed, out _);
 
-            Insert(records!, recordCount, record, ObjectNullRecord.Instance);
-        }
-        return records;
-    }
+            recordCount -= record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
 
-    private protected static int Insert<T>(List<T?> values, int targetCount, object value, T? nullValue)
-    {
-        int nullCount = value switch
-        {
-            ObjectNullRecord => 1,
-            ObjectNullMultiple256Record few => few.Count,
-            ObjectNullMultipleRecord many => many.Count,
-            _ => 0
-        };
-
-        if (nullCount > 0)
-        {
-            if (values.Count + nullCount > targetCount)
+            if (recordCount < 0)
             {
-                throw new SerializationException($"Unexpected Null Record count: {nullCount}.");
+                throw new SerializationException("Unexpected Null Record count.");
             }
 
-            do
-            {
-                values.Add(nullValue);
-                nullCount--;
-            } while (nullCount > 0);
+            records.Add(record);
         }
-        else
-        {
-            values.Add((T)value);
-        }
-
-        return nullCount;
+        return records;
     }
 }

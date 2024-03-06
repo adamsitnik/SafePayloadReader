@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -17,23 +16,50 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 {
     private ArraySingleObjectRecord(ArrayInfo arrayInfo, List<SerializationRecord> records)
-        : base(Map(records))
+        : base(arrayInfo)
     {
-        ArrayInfo = arrayInfo;
         Records = records;
     }
 
     public override RecordType RecordType => RecordType.ArraySingleObject;
 
-    internal override int ObjectId => ArrayInfo.ObjectId;
-
-    internal ArrayInfo ArrayInfo { get; }
-
-    internal IReadOnlyList<SerializationRecord> Records { get; }
+    private List<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
-    internal override object GetValue() => Values.ToArray();
+    public override object?[] Deserialize(bool allowNulls = true)
+    {
+        object?[] values = new object?[Length];
+
+        for (int recordIndex = 0, valueIndex = 0; recordIndex < Records.Count; recordIndex++)
+        {
+            SerializationRecord record = Records[recordIndex];
+
+            int nullCount = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 0;
+            if (nullCount == 0)
+            {
+                values[valueIndex++] = record is MemberReferenceRecord referenceRecord && referenceRecord.Reference == ObjectId
+                    ? values // a reference to self, and a way to get StackOverflow exception ;)
+                    : record.GetValue();
+                continue;
+            }
+
+            if (!allowNulls)
+            {
+                throw new SerializationException("The array contained null(s)");
+            }
+
+            do
+            {
+                values[valueIndex++] = null;
+                nullCount--;
+            } while (nullCount > 0);
+        }
+
+        return values;
+    }
+
+    internal override object GetValue() => Deserialize();
 
     internal static ArraySingleObjectRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
@@ -46,15 +72,5 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
         List<SerializationRecord> records = ReadRecords(reader, recordMap, arrayInfo.Length, allowed);
 
         return new(arrayInfo, records);
-    }
-
-    private static object?[] Map(List<SerializationRecord> records)
-    {
-        object?[] values = new object?[records.Count];
-        for (int i = 0; i < records.Count; i++)
-        {
-            values[i] = records[i].GetValue();
-        }
-        return values;
     }
 }

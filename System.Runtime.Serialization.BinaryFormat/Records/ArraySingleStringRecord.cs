@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -16,43 +15,78 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private ArraySingleStringRecord(int objectId, List<string?> values) : base(values) => ObjectId = objectId;
+    private ArraySingleStringRecord(ArrayInfo arrayInfo, List<SerializationRecord> records) : base(arrayInfo)
+        => Records = records;
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
-    internal override int ObjectId { get; }
+    private List<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
 
-    internal override object GetValue() => Values.ToArray();
+    public override string?[] Deserialize(bool allowNulls = true)
+    {
+        string?[] values = new string?[Length];
+
+        for (int recordIndex = 0, valueIndex = 0; recordIndex < Records.Count; recordIndex++)
+        {
+            SerializationRecord record = Records[recordIndex];
+
+            if (record is BinaryObjectStringRecord stringRecord)
+            {
+                values[valueIndex++] = stringRecord.Value;
+                continue;
+            }
+
+            if (!allowNulls)
+            {
+                throw new SerializationException("The array contained null(s)");
+            }
+
+            int nullCount = ((NullsRecord)record).NullCount;
+            do
+            {
+                values[valueIndex++] = null;
+                nullCount--;
+            } while (nullCount > 0);
+        }
+
+        return values;
+    }
+
+    internal override object GetValue() => Deserialize();
 
     internal static ArraySingleStringRecord Parse(BinaryReader reader, RecordMap recordsMap)
     {
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
 
-        List<string?> values = new();
         // An array of string can consist of string(s) and null(s)
-        AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
+        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
 
-        while (values.Count < arrayInfo.Length)
+        // We must not pre-allocate an array of given size, as it could be used as a vector of attack.
+        // Example: Define a class with 20 string array fields, each of them being an array
+        // of max size and containing just a single ObjectNullMultipleRecord record
+        // that specifies that the whole array is full of nulls.
+        List<SerializationRecord> records = new();
+
+        // BinaryObjectString and ObjectNull has a size == 1, but
+        // ObjectNullMultiple256Record and ObjectNullMultipleRecord specify the number of null elements
+        // so their size differs.
+        int recordsSize = 0;
+        while (recordsSize < arrayInfo.Length)
         {
             SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, allowedTypes, out _);
 
-            if (record is BinaryObjectStringRecord stringRecord)
+            int recordSize = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
+            if (recordsSize + recordSize > arrayInfo.Length)
             {
-                values.Add(stringRecord.Value);
-
-                allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
+                throw new SerializationException($"Unexpected Null Record count: {recordSize}.");
             }
-            else
-            {
-                Insert(values, arrayInfo.Length, record, null);
 
-                // A null record can not be followed by another null record
-                allowedTypes = AllowedRecordTypes.BinaryObjectString;
-            }
+            records.Add(record);
+            recordsSize += recordSize;
         }
 
-        return new(arrayInfo.ObjectId, values);
+        return new(arrayInfo, records);
     }
 }

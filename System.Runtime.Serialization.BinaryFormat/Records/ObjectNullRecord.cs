@@ -10,11 +10,13 @@
 ///   </see>
 ///  </para>
 /// </remarks>
-internal sealed class ObjectNullRecord : SerializationRecord
+internal sealed class ObjectNullRecord : NullsRecord
 {
     internal static ObjectNullRecord Instance { get; } = new();
 
     public override RecordType RecordType => RecordType.ObjectNull;
+
+    internal override int NullCount => 1;
 
     public override bool IsSerializedInstanceOf(Type type) => !type.IsValueType; // TODO: ensure this is expected
 

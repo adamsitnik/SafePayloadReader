@@ -1,36 +1,68 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 {
     internal BinaryArrayRecord(ArrayInfo arrayInfo, BinaryArrayType arrayType, int rank,
-        MemberTypeInfo memberTypeInfo, List<ClassRecord?> records) : base(records)
+        MemberTypeInfo memberTypeInfo, List<SerializationRecord> records) : base(arrayInfo)
     {
-        ArrayInfo = arrayInfo;
         ArrayType = arrayType;
         Rank = rank;
         MemberTypeInfo = memberTypeInfo;
+        Records = records;
     }
 
     public override RecordType RecordType => RecordType.BinaryArray;
 
-    internal override int ObjectId => ArrayInfo.ObjectId;
-
-    internal ArrayInfo ArrayInfo { get; }
-
     internal BinaryArrayType ArrayType { get; }
 
-    internal int Rank { get; }
+    private int Rank { get; }
 
-    internal MemberTypeInfo MemberTypeInfo { get; }
+    private MemberTypeInfo MemberTypeInfo { get; }
+
+    internal List<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type)
         => type.IsArray && type.GetArrayRank() == Rank; // TODO: compare the type
 
-    internal override object GetValue() => Values.ToArray();
+    public override ClassRecord?[] Deserialize(bool allowNulls = true)
+    {
+        ClassRecord?[] classRecords = new ClassRecord?[Length];
+
+        for (int recordIndex = 0, valueIndex = 0; recordIndex < Records.Count; recordIndex++)
+        {
+            SerializationRecord record = Records[recordIndex];
+
+            if (record is MemberReferenceRecord referenceRecord)
+            {
+                record = referenceRecord.GetReferencedRecord();
+            }
+
+            if (record is ClassRecord classRecord)
+            {
+                classRecords[valueIndex++] = classRecord;
+                continue;
+            }
+
+            if (!allowNulls)
+            {
+                throw new SerializationException("The array contained null(s)");
+            }
+
+            int nullCount = ((NullsRecord)record).NullCount;
+            do
+            {
+                classRecords[valueIndex++] = null;
+                nullCount--;
+            } while (nullCount > 0);
+        }
+
+        return classRecords;
+    }
+
+    internal override object GetValue() => Deserialize();
 
     internal static BinaryArrayRecord Parse(BinaryReader reader, RecordMap recordMap)
     {
@@ -45,26 +77,22 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
         }
 
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1);
-        List<ClassRecord?> records = new();
+        List<SerializationRecord> records = new();
         (BinaryType BinaryType, object? AdditionalInfo) = memberTypeInfo.Infos[0];
 
-        while (records.Count < length)
+        int recordsSize = 0;
+        while (recordsSize < length)
         {
-            object value = ReadValue(reader, recordMap, BinaryType, AdditionalInfo);
+            SerializationRecord record = (SerializationRecord)ReadValue(reader, recordMap, BinaryType, AdditionalInfo);
 
-            if (value is MemberReferenceRecord referenceRecord)
+            int recordSize = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
+            if (recordsSize + recordSize > length)
             {
-                value = new LazyClassRecord(referenceRecord);
+                throw new SerializationException($"Unexpected Null Record count: {recordSize}.");
             }
 
-            if (value is ClassRecord classRecord)
-            {
-                records.Add(classRecord);
-            }
-            else if(Insert(records, length, value, null) < 0)
-            {
-                throw new SerializationException($"Unexpected type: {value.GetType()}");
-            }
+            records.Add(record);
+            recordsSize += recordSize;
         }
 
         return new(new ArrayInfo(objectId, length), arrayType, rank, memberTypeInfo, records);

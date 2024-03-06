@@ -1,20 +1,30 @@
-﻿using System.Collections.Generic;
-
-namespace System.Runtime.Serialization.BinaryFormat;
+﻿namespace System.Runtime.Serialization.BinaryFormat;
 
 public abstract class ArrayRecord<T> : SerializationRecord
 {
-    private protected ArrayRecord(IReadOnlyList<T> values) => Values = values;
+    private protected ArrayRecord(ArrayInfo arrayInfo) => ArrayInfo = arrayInfo;
 
     /// <summary>
-    ///  Returns the item at the given index.
+    /// Length of the array.
     /// </summary>
-    public T this[int index] => Values[index];
+    public int Length => ArrayInfo.Length;
+
+    internal override int ObjectId => ArrayInfo.ObjectId;
+
+    private ArrayInfo ArrayInfo { get; }
 
     /// <summary>
-    ///  Length of the array.
+    /// Allocates an array of <typeparamref name="T"/> and fills it with the data provided in the serialized records (in case of primitive types like <see cref="string"/> or <see cref="int"/>) or the serialized records themselves.
     /// </summary>
-    public int Length => Values.Count;
-
-    internal IReadOnlyList<T> Values { get; }
+    /// <remarks>
+    /// <para>
+    /// The array has <seealso cref="ArrayRecord.Length"/> elements and can be used as a vector of attack.
+    /// Example: an array with <seealso cref="Array.MaxLength"/> elements that contains only nulls
+    /// takes 15 bytes to serialize and more than 2 GB to deserialize!
+    /// </para>
+    /// <para>
+    /// A new array is allocated every time this method is called.
+    /// </para>
+    /// </remarks>
+    public abstract T?[] Deserialize(bool allowNulls = true);
 }

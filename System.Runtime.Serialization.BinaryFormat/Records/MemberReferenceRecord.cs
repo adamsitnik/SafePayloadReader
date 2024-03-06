@@ -25,7 +25,7 @@ internal sealed class MemberReferenceRecord : SerializationRecord
 
     public override RecordType RecordType => RecordType.MemberReference;
 
-    private int Reference { get; }
+    internal int Reference { get; }
 
     private RecordMap RecordMap { get; }
 

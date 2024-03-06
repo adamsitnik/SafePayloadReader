@@ -12,13 +12,13 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///   </see>
 ///  </para>
 /// </remarks>
-internal sealed class ObjectNullMultiple256Record : SerializationRecord
+internal sealed class ObjectNullMultiple256Record : NullsRecord
 {
-    private ObjectNullMultiple256Record(byte count) => Count = count;
+    private ObjectNullMultiple256Record(byte count) => NullCount = count;
 
     public override RecordType RecordType => RecordType.ObjectNullMultiple256;
 
-    internal byte Count { get; }
+    internal override int NullCount { get; }
 
     internal static ObjectNullMultiple256Record Parse(BinaryReader reader)
         => new(reader.ReadByte());

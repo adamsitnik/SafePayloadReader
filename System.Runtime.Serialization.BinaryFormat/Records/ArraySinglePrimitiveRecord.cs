@@ -1,5 +1,4 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -19,45 +18,44 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
     where T : unmanaged
 {
-    internal ArraySinglePrimitiveRecord(int id, IReadOnlyList<T> values) : base(values) => ObjectId = id;
+    internal ArraySinglePrimitiveRecord(ArrayInfo arrayInfo, IReadOnlyList<T> values) : base(arrayInfo) => Values = values;
 
     public override RecordType RecordType => RecordType.ArraySinglePrimitive;
 
-    internal override int ObjectId { get; }
+    internal IReadOnlyList<T> Values { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 
-    internal override object GetValue() => Values.ToArray();
+    public override T[] Deserialize(bool allowNulls = true) => Values.ToArray();
+
+    internal override object GetValue() => Deserialize();
 
     internal static SerializationRecord Parse(BinaryReader reader)
     {
-        ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
+        ArrayInfo info = ArrayInfo.Parse(reader);
         PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
 
-        int id = arrayInfo.ObjectId;
-        int length = arrayInfo.Length;
+        int length = info.Length;
 
-        SerializationRecord record = primitiveType switch
+        return primitiveType switch
         {
-            PrimitiveType.Boolean => new ArraySinglePrimitiveRecord<bool>(id, ReadPrimitiveTypes<bool>(reader, length)),
-            PrimitiveType.Byte => new ArraySinglePrimitiveRecord<byte>(id, ReadPrimitiveTypes<byte>(reader, length)),
-            PrimitiveType.SByte => new ArraySinglePrimitiveRecord<sbyte>(id, ReadPrimitiveTypes<sbyte>(reader, length)),
-            PrimitiveType.Char => new ArraySinglePrimitiveRecord<char>(id, ReadPrimitiveTypes<char>(reader, length)),
-            PrimitiveType.Int16 => new ArraySinglePrimitiveRecord<short>(id, ReadPrimitiveTypes<short>(reader, length)),
-            PrimitiveType.UInt16 => new ArraySinglePrimitiveRecord<ushort>(id, ReadPrimitiveTypes<ushort>(reader, length)),
-            PrimitiveType.Int32 => new ArraySinglePrimitiveRecord<int>(id, ReadPrimitiveTypes<int>(reader, length)),
-            PrimitiveType.UInt32 => new ArraySinglePrimitiveRecord<uint>(id, ReadPrimitiveTypes<uint>(reader, length)),
-            PrimitiveType.Int64 => new ArraySinglePrimitiveRecord<long>(id, ReadPrimitiveTypes<long>(reader, length)),
-            PrimitiveType.UInt64 => new ArraySinglePrimitiveRecord<ulong>(id, ReadPrimitiveTypes<ulong>(reader, length)),
-            PrimitiveType.Single => new ArraySinglePrimitiveRecord<float>(id, ReadPrimitiveTypes<float>(reader, length)),
-            PrimitiveType.Double => new ArraySinglePrimitiveRecord<double>(id, ReadPrimitiveTypes<double>(reader, length)),
-            PrimitiveType.Decimal => new ArraySinglePrimitiveRecord<decimal>(id, ReadPrimitiveTypes<decimal>(reader, length)),
-            PrimitiveType.DateTime => new ArraySinglePrimitiveRecord<DateTime>(id, ReadPrimitiveTypes<DateTime>(reader, length)),
-            PrimitiveType.TimeSpan => new ArraySinglePrimitiveRecord<TimeSpan>(id, ReadPrimitiveTypes<TimeSpan>(reader, length)),
+            PrimitiveType.Boolean => new ArraySinglePrimitiveRecord<bool>(info, ReadPrimitiveTypes<bool>(reader, length)),
+            PrimitiveType.Byte => new ArraySinglePrimitiveRecord<byte>(info, ReadPrimitiveTypes<byte>(reader, length)),
+            PrimitiveType.SByte => new ArraySinglePrimitiveRecord<sbyte>(info, ReadPrimitiveTypes<sbyte>(reader, length)),
+            PrimitiveType.Char => new ArraySinglePrimitiveRecord<char>(info, ReadPrimitiveTypes<char>(reader, length)),
+            PrimitiveType.Int16 => new ArraySinglePrimitiveRecord<short>(info, ReadPrimitiveTypes<short>(reader, length)),
+            PrimitiveType.UInt16 => new ArraySinglePrimitiveRecord<ushort>(info, ReadPrimitiveTypes<ushort>(reader, length)),
+            PrimitiveType.Int32 => new ArraySinglePrimitiveRecord<int>(info, ReadPrimitiveTypes<int>(reader, length)),
+            PrimitiveType.UInt32 => new ArraySinglePrimitiveRecord<uint>(info, ReadPrimitiveTypes<uint>(reader, length)),
+            PrimitiveType.Int64 => new ArraySinglePrimitiveRecord<long>(info, ReadPrimitiveTypes<long>(reader, length)),
+            PrimitiveType.UInt64 => new ArraySinglePrimitiveRecord<ulong>(info, ReadPrimitiveTypes<ulong>(reader, length)),
+            PrimitiveType.Single => new ArraySinglePrimitiveRecord<float>(info, ReadPrimitiveTypes<float>(reader, length)),
+            PrimitiveType.Double => new ArraySinglePrimitiveRecord<double>(info, ReadPrimitiveTypes<double>(reader, length)),
+            PrimitiveType.Decimal => new ArraySinglePrimitiveRecord<decimal>(info, ReadPrimitiveTypes<decimal>(reader, length)),
+            PrimitiveType.DateTime => new ArraySinglePrimitiveRecord<DateTime>(info, ReadPrimitiveTypes<DateTime>(reader, length)),
+            PrimitiveType.TimeSpan => new ArraySinglePrimitiveRecord<TimeSpan>(info, ReadPrimitiveTypes<TimeSpan>(reader, length)),
             _ => throw new SerializationException($"Failure trying to read primitive '{primitiveType}'"),
         };
-
-        return record;
     }
 
     private static IReadOnlyList<T> ReadPrimitiveTypes<T>(BinaryReader reader, int count)
