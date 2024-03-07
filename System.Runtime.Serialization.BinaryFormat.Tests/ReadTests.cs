@@ -25,4 +25,11 @@ public abstract class ReadTests
         writer.Write(major); // major version
         writer.Write(minor); // minor version
     }
+
+    protected static void WriteBinaryLibrary(BinaryWriter writer, int objectId, string libraryName)
+    {
+        writer.Write((byte)RecordType.BinaryLibrary);
+        writer.Write(objectId);
+        writer.Write(libraryName);
+    }
 }

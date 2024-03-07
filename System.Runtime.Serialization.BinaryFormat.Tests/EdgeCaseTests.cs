@@ -25,4 +25,19 @@ public class EdgeCaseTests : ReadTests
         Assert.Equal("System.UnitySerializationHolder", classRecord.TypeName);
         Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord["AssemblyName"]);
     }
+
+    [Fact]
+    public void ArraysOfStringsCanContainMemberReferences()
+    {
+        // it has to be the same object, not just the same value
+        const string same = "same";
+        string[] input = { same, same };
+
+        using MemoryStream stream = Serialize(input);
+
+        string?[] ouput = SafePayloadReader.ReadArrayOfStrings(stream);
+
+        Assert.Equal(input, ouput);
+        Assert.Same(ouput[0], ouput[1]);
+    }
 }

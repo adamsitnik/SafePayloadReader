@@ -24,13 +24,13 @@ public abstract class ClassRecord : SerializationRecord
     public string TypeName => ClassInfo.Name;
 
     // Currently we don't expose raw values, so we are not preserving the order here.
-    public virtual IEnumerable<string> MemberNames => ClassInfo.MemberNames.Keys;
+    public IEnumerable<string> MemberNames => ClassInfo.MemberNames.Keys;
 
     internal override int ObjectId => ClassInfo.ObjectId;
 
-    internal virtual ClassInfo ClassInfo { get; }
+    internal ClassInfo ClassInfo { get; }
 
-    internal virtual IReadOnlyList<object> MemberValues { get; }
+    internal IReadOnlyList<object?> MemberValues { get; }
 
     /// <summary>
     /// Retrieves the value of provided field.
@@ -42,7 +42,7 @@ public abstract class ClassRecord : SerializationRecord
     /// for other types returns <seealso cref="ClassRecord"/> or <seealso cref="ArrayRecord{T}"/>.
     /// </returns>
     /// <exception cref="KeyNotFoundException">Member of such name does not exist.</exception>
-    public virtual object? this[string memberName]
+    public object? this[string memberName]
     {
         get
         {

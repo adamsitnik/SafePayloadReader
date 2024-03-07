@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests;
@@ -65,5 +61,27 @@ public class InvalidInputTests : ReadTests
 
         stream.Position = 0;
         Assert.Throws<SerializationException>(() => SafePayloadReader.Read(stream));
+    }
+
+    [Fact]
+    public void ThrowWhenArrayOfStringsContainsReferenceToNonString()
+    {
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
+
+        WriteSerializedStreamHeader(writer);
+
+        const int LibraryId = 2;
+        WriteBinaryLibrary(writer, LibraryId, "LibraryName.dll");
+
+        writer.Write((byte)RecordType.ArraySingleString);
+        writer.Write(1); // array Id
+        writer.Write(1); // array length
+        writer.Write((byte)RecordType.MemberReference);
+        writer.Write(LibraryId); // reference to the library
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+        Assert.Throws<SerializationException>(() => SafePayloadReader.ReadArrayOfStrings(stream));
     }
 }

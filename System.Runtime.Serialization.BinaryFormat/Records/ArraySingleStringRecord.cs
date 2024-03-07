@@ -32,6 +32,18 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
         {
             SerializationRecord record = Records[recordIndex];
 
+            if (record is MemberReferenceRecord memberReference)
+            {
+                record = memberReference.GetReferencedRecord();
+
+                if (record is not BinaryObjectStringRecord)
+                {
+                    // TODO: consider throwing this exception as soon as we read the referenced record.
+                    // It would require registering reference validation checks.
+                    throw new SerializationException("The string array contained a reference to non-string.");
+                }
+            }
+
             if (record is BinaryObjectStringRecord stringRecord)
             {
                 values[valueIndex++] = stringRecord.Value;
@@ -40,7 +52,7 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 
             if (!allowNulls)
             {
-                throw new SerializationException("The array contained null(s)");
+                throw new SerializationException("The array contained null(s).");
             }
 
             int nullCount = ((NullsRecord)record).NullCount;
@@ -60,8 +72,8 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
     {
         ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
 
-        // An array of string can consist of string(s) and null(s)
-        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls;
+        // An array of string can consist of string(s), null(s) and reference(s) to string(s).
+        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls | AllowedRecordTypes.MemberReference;
 
         // We must not pre-allocate an array of given size, as it could be used as a vector of attack.
         // Example: Define a class with 20 string array fields, each of them being an array
