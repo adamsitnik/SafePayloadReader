@@ -23,7 +23,8 @@ public abstract class ClassRecord : SerializationRecord
 
     public string TypeName => ClassInfo.Name;
 
-    public virtual IReadOnlyList<string> MemberNames => ClassInfo.MemberNames;
+    // Currently we don't expose raw values, so we are not preserving the order here.
+    public virtual IEnumerable<string> MemberNames => ClassInfo.MemberNames.Keys;
 
     internal override int ObjectId => ClassInfo.ObjectId;
 
@@ -45,11 +46,7 @@ public abstract class ClassRecord : SerializationRecord
     {
         get
         {
-            int index = IndexOf(ClassInfo.MemberNames, memberName);
-            if (index < 0)
-            {
-                throw new KeyNotFoundException();
-            }
+            int index = ClassInfo.MemberNames[memberName];
 
             object value = MemberValues[index];
             if (value is SerializationRecord record)
@@ -58,18 +55,5 @@ public abstract class ClassRecord : SerializationRecord
             }
             return value;
         }
-    }
-
-    private static int IndexOf(IReadOnlyList<string> memberNames, string memberName)
-    {
-        for (int i = 0; i < memberNames.Count; i++)
-        {
-            if (memberNames[i] == memberName)
-            {
-                return i;
-            }
-        }
-
-        return -1;
     }
 }
