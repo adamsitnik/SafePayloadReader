@@ -1,16 +1,13 @@
 ﻿using System.Collections.Generic;
-using System.Globalization;
+using System.IO.Hashing;
+using System.Runtime.InteropServices;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 internal sealed class RecordMap
 {
     private readonly List<SerializationRecord> _records = new(); // TODO: verify whether we actually need that
-#if NETCOREAPP
     private readonly Dictionary<int, SerializationRecord> _map = new(CollisionResistantInt32Comparer.Instance);
-#else
-    private readonly Dictionary<string, SerializationRecord> _map = new();
-#endif
 
     internal void Add(SerializationRecord record)
     {
@@ -22,21 +19,12 @@ internal sealed class RecordMap
         if (record.ObjectId != SerializationRecord.NoId)
         {
             // use Add on purpose, so in case of duplicate Ids we get an exception
-#if NETCOREAPP
             _map.Add(record.ObjectId, record);
-#else
-            _map.Add(record.ObjectId.ToString(CultureInfo.InvariantCulture), record);
-#endif
         }
     }
 
-#if NETCOREAPP
     internal SerializationRecord this[int objectId] => _map[objectId];
-#else
-    internal SerializationRecord this[int objectId] => _map[objectId.ToString(CultureInfo.InvariantCulture)];
-#endif
 
-#if NETCOREAPP
     // keys (32-bit integer ids) are adversary-provided so we need a collision-resistant comparer
     private sealed class CollisionResistantInt32Comparer : IEqualityComparer<int>
     {
@@ -46,7 +34,14 @@ internal sealed class RecordMap
 
         public bool Equals(int x, int y) => x == y;
 
-        public int GetHashCode(int obj) => HashCode.Combine(obj); // quick & dirty, but gets the job done
-    }
+        public int GetHashCode(int obj)
+        {
+#if NETCOREAPP
+            Span<int> integers = new(ref obj);
+#else
+            Span<int> integers = stackalloc int[1] { obj };
 #endif
+            return (int)XxHash32.HashToUInt32(MemoryMarshal.AsBytes(integers));
+        }
+    }
 }
