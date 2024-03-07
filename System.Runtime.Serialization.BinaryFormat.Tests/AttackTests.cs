@@ -3,6 +3,7 @@ using System.Text;
 using System.Reflection;
 using Xunit;
 using System.Linq;
+using System.Reflection.Emit;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests;
 
@@ -144,5 +145,109 @@ public class AttackTests : ReadTests
 
             return GC.GetAllocatedBytesForCurrentThread();
         }
+    }
+
+    [Fact]
+    public void UnboundedRecursion_NestedTypes_ActualBinaryFormatterInput()
+    {
+        Type[] ctorTypes = [typeof(string), typeof(Exception)];
+        ConstructorInfo baseCtor = typeof(Exception).GetConstructor(ctorTypes)!;
+
+        AssemblyBuilder assembly = AssemblyBuilder.DefineDynamicAssembly(new("Name"), AssemblyBuilderAccess.Run);
+        ModuleBuilder module = assembly.DefineDynamicModule("PlentyOfExceptions");
+
+        Exception previous = new("Some message");
+        for (int i = 0; i <= 10_000; i++)
+        {
+            Exception nested = CreateNewExceptionTypeAndInstantiateIt(ctorTypes, baseCtor, module, previous, i);
+            previous = nested;
+        }
+
+        using MemoryStream stream = Serialize(previous);
+
+        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+
+        static Exception CreateNewExceptionTypeAndInstantiateIt(Type[] ctorTypes, ConstructorInfo baseCtor, 
+            ModuleBuilder module, Exception previous, int i)
+        {
+#pragma warning disable SYSLIB0050 // Type or member is obsolete (I know!)
+            const TypeAttributes publicSerializable = TypeAttributes.Public | TypeAttributes.Serializable;
+#pragma warning restore SYSLIB0050
+
+            var typeBuilder = module.DefineType($"Exception{i}", publicSerializable, typeof(Exception));
+            var ctorBuilder = typeBuilder.DefineConstructor(MethodAttributes.Public, CallingConventions.Standard, ctorTypes);
+
+            // generate a ctor that simply passes (string message, Exception innerException) to base type (Exception)
+            ILGenerator ilGenerator = ctorBuilder.GetILGenerator();
+            ilGenerator.Emit(OpCodes.Ldarg_0); // push "this"
+            ilGenerator.Emit(OpCodes.Ldarg_1); // push "message"
+            ilGenerator.Emit(OpCodes.Ldarg_2); // push "innerException"
+            ilGenerator.Emit(OpCodes.Call, baseCtor);
+            ilGenerator.Emit(OpCodes.Ret);
+
+            Type newExceptionType = typeBuilder.CreateType();
+
+            ConstructorInfo constructorInfo = newExceptionType.GetConstructor(ctorTypes)!;
+
+            return (Exception)constructorInfo.Invoke([i.ToString(), previous]);
+        }
+    }
+
+    [Theory]
+    [InlineData(RecordType.ClassWithMembers)]
+    [InlineData(RecordType.ClassWithMembersAndTypes)]
+    [InlineData(RecordType.SystemClassWithMembers)]
+    [InlineData(RecordType.SystemClassWithMembersAndTypes)]
+    public void UnboundedRecursion_NestedClasses_FakeInput(RecordType recordType)
+    {
+        const int ClassesCount = 10_000;
+        const int LibraryId = ClassesCount + 1;
+
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
+
+        WriteSerializedStreamHeader(writer);
+        WriteBinaryLibrary(writer, LibraryId, "LibraryName");
+
+        for (int i = 1; i <= ClassesCount; )
+        {
+            // ClassInfo (always present)
+            writer.Write((byte)recordType);
+            writer.Write(i); // object ID
+            writer.Write($"Class{i}"); // type name
+            bool isLast = i++ == ClassesCount;
+            writer.Write(isLast ? 0 : 1); // member count (the last one has 0)
+
+            if (!isLast)
+            {
+                writer.Write("memberName");
+                // MemberTypeInfo (if needed)
+                if (recordType is RecordType.ClassWithMembersAndTypes or RecordType.SystemClassWithMembersAndTypes)
+                {
+                    byte memberType = recordType is RecordType.SystemClassWithMembersAndTypes
+                        ? (byte)3  // BinaryType.SystemClass
+                        : (byte)4; // BinaryType.Class;
+
+                    writer.Write(memberType);
+                    writer.Write($"Class{i}"); // member type name
+
+                    if (recordType is RecordType.ClassWithMembersAndTypes)
+                    {
+                        writer.Write(LibraryId);
+                    }
+                }
+            }
+            // LibraryId (if needed)
+            if (recordType is RecordType.ClassWithMembers or RecordType.ClassWithMembersAndTypes)
+            {
+                writer.Write(LibraryId);
+            }
+        }
+
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+
+        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
     }
 }

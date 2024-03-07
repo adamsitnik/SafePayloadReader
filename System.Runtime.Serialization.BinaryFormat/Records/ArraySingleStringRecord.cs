@@ -85,6 +85,7 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
         int recordsSize = 0;
         while (recordsSize < arrayInfo.Length)
         {
+            // calling ReadNext is safe here, as we limit the allowed types to types that won't ever call ReadNext
             SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, allowedTypes, out _);
 
             int recordSize = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;

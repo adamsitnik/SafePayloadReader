@@ -32,7 +32,8 @@ public abstract class SerializationRecord
         object? typeInfo) => type switch
         {
             BinaryType.Primitive => ReadPrimitiveType(reader, (PrimitiveType)typeInfo!),
-            BinaryType.String => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.ObjectNull, out _),
+            // calling ReadNext is safe here, as we limit the allowed types to types that won't ever call ReadNext
+            BinaryType.String => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.Strings, out _),
             BinaryType.Object => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.Classes, out _),
             BinaryType.StringArray => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.ArraySingleString | AllowedRecordTypes.MemberReference, out _),
             BinaryType.PrimitiveArray => SafePayloadReader.ReadNext(reader, recordMap, AllowedRecordTypes.ArraySinglePrimitive | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference, out _),
