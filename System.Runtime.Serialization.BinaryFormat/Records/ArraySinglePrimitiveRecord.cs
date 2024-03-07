@@ -26,7 +26,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 
-    public override T[] Deserialize(bool allowNulls = true) => Values.ToArray();
+    protected override T[] Deserialize(bool allowNulls) => Values.ToArray();
 
     internal override object GetValue() => Deserialize();
 

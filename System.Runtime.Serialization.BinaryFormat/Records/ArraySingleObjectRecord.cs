@@ -27,7 +27,7 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
-    public override object?[] Deserialize(bool allowNulls = true)
+    protected override object?[] Deserialize(bool allowNulls)
     {
         object?[] values = new object?[Length];
 
@@ -58,8 +58,6 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
         return values;
     }
-
-    internal override object GetValue() => Deserialize();
 
     internal static ArraySingleObjectRecord Parse(BinaryReader reader, RecordMap recordMap)
     {

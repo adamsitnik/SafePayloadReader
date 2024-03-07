@@ -27,7 +27,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
     public override bool IsSerializedInstanceOf(Type type)
         => type.IsArray && type.GetArrayRank() == Rank; // TODO: compare the type
 
-    public override ClassRecord?[] Deserialize(bool allowNulls = true)
+    protected override ClassRecord?[] Deserialize(bool allowNulls)
     {
         ClassRecord?[] classRecords = new ClassRecord?[Length];
 

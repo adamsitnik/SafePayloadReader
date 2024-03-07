@@ -83,8 +83,8 @@ public class AttackTests : ReadTests
         ClassRecord classRecord = SafePayloadReader.ReadClassRecord<WithCyclicReferenceInArrayOfObjects>(stream);
 
         Assert.Equal(input.Name, classRecord[nameof(WithCyclicReferenceInArrayOfObjects.Name)]);
-        object?[] array = (object?[])classRecord[nameof(WithCyclicReferenceInArrayOfObjects.ArrayWithReferenceToSelf)]!;
-        Assert.Same(classRecord, array.Single());
+        ArrayRecord<object?> array = (ArrayRecord<object?>)classRecord[nameof(WithCyclicReferenceInArrayOfObjects.ArrayWithReferenceToSelf)]!;
+        Assert.Same(classRecord, array.Deserialize().Single());
     }
 
     [Serializable]
