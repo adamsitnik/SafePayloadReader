@@ -15,8 +15,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ClassWithMembersRecord : ClassRecord
 {
-    private ClassWithMembersRecord(ClassInfo classInfo, BinaryLibraryRecord library, List<SerializationRecord> memberValues) 
-        : base(classInfo, memberValues)
+    private ClassWithMembersRecord(ClassInfo classInfo, BinaryLibraryRecord library) : base(classInfo)
     {
         Library = library;
     }
@@ -24,6 +23,8 @@ internal sealed class ClassWithMembersRecord : ClassRecord
     public override RecordType RecordType => RecordType.ClassWithMembers;
 
     internal BinaryLibraryRecord Library { get; }
+
+    internal override int ExpectedValuesCount => ClassInfo.MemberNames.Count;
 
     public override bool IsSerializedInstanceOf(Type type)
         => FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name
@@ -33,10 +34,12 @@ internal sealed class ClassWithMembersRecord : ClassRecord
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         int libraryId = reader.ReadInt32();
-        List<SerializationRecord> memberValues = ReadRecords(reader, recordMap, classInfo.MemberNames.Count);
-
+        
         BinaryLibraryRecord library = (BinaryLibraryRecord)recordMap[libraryId];
 
-        return new(classInfo, library, memberValues);
+        return new(classInfo, library);
     }
+
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetNextAllowedRecordType()
+        => (AllowedRecordTypes.AnyObject, PrimitiveType.None);
 }

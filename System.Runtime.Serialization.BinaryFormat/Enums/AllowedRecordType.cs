@@ -28,15 +28,15 @@ internal enum AllowedRecordTypes : uint
     MethodCall = 1 << RecordType.MethodCall,
     MethodReturn = 1 << RecordType.MethodReturn,
 
-    Arrays = ArraySingleObject | ArraySinglePrimitive | ArraySingleString | BinaryArray,
-    Classes = ClassWithId | ClassWithMembers | ClassWithMembersAndTypes | SystemClassWithMembers | SystemClassWithMembersAndTypes,
-    MemberReferences = MemberPrimitiveTyped | MemberReference | BinaryObjectString | ObjectNull | Classes,
     Nulls = ObjectNull | ObjectNullMultiple256 | ObjectNullMultiple,
-    Referenceable = Arrays | Classes | BinaryObjectString,
-    Strings = BinaryObjectString | ObjectNull | MemberReference,
 
     /// <summary>
-    /// Everything beside SerializedStreamHeader and MessageEnd
+    /// Any .NET object (a primitive, a reference type, a reference or single null).
     /// </summary>
-    AnyData = BinaryLibrary | MemberReferences | Referenceable | Nulls
+    AnyObject = MemberPrimitiveTyped
+        | ArraySingleObject | ArraySinglePrimitive | ArraySingleString | BinaryArray
+        | ClassWithId | ClassWithMembers | ClassWithMembersAndTypes | SystemClassWithMembers | SystemClassWithMembersAndTypes
+        | BinaryObjectString
+        | MemberReference
+        | ObjectNull,
 }

@@ -198,7 +198,7 @@ public class AttackTests : ReadTests
     [InlineData(RecordType.ClassWithMembersAndTypes)]
     [InlineData(RecordType.SystemClassWithMembers)]
     [InlineData(RecordType.SystemClassWithMembersAndTypes)]
-    public void UnboundedRecursion_NestedClasses_FakeInput(RecordType recordType)
+    public void UnboundedRecursion_NestedClasses_FakeButValidInput(RecordType recordType)
     {
         const int ClassesCount = 10_000;
         const int LibraryId = ClassesCount + 1;

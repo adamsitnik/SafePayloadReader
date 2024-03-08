@@ -15,15 +15,19 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ClassWithIdRecord : ClassRecord
 {
-    private ClassWithIdRecord(int objectId, ClassRecord metadataClass, IReadOnlyList<object> memberValues)
-        : base(metadataClass.ClassInfo, memberValues)
+    private ClassWithIdRecord(int objectId, ClassRecord metadataClass) : base(metadataClass.ClassInfo)
     {
         ObjectId = objectId;
+        MetadataClass = metadataClass;
     }
 
     public override RecordType RecordType => RecordType.ClassWithId;
 
     internal override int ObjectId { get; }
+
+    internal ClassRecord MetadataClass { get; }
+
+    internal override int ExpectedValuesCount => MetadataClass.ExpectedValuesCount;
 
     internal static ClassWithIdRecord Parse(
         BinaryReader reader,
@@ -37,19 +41,17 @@ internal sealed class ClassWithIdRecord : ClassRecord
             throw new SerializationException();
         }
 
-        IReadOnlyList<object> memberValues = referencedRecord switch
+        return new(objectId, referencedRecord);
+    }
+
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetNextAllowedRecordType()
+        => MetadataClass switch
         {
             ClassWithMembersAndTypesRecord classWithMembersAndTypes
-                => classWithMembersAndTypes.MemberTypeInfo.ReadValues(reader, recordMap),
+                => classWithMembersAndTypes.MemberTypeInfo.GetNextAllowedRecordType(MemberValues.Count),
             SystemClassWithMembersAndTypesRecord systemClassWithMembersAndTypes
-                => systemClassWithMembersAndTypes.MemberTypeInfo.ReadValues(reader, recordMap),
-            ClassWithMembersRecord classWithMembers
-                => ReadRecords(reader, recordMap, classWithMembers.MemberValues.Count),
-            SystemClassWithMembersRecord systemClassWithMembers
-                => ReadRecords(reader, recordMap, systemClassWithMembers.MemberValues.Count),
-            _ => throw new SerializationException(),
+                => systemClassWithMembersAndTypes.MemberTypeInfo.GetNextAllowedRecordType(MemberValues.Count),
+            // ClassWithMembersRecord and SystemClassWithMembersRecord allow for AnyData
+            _ => (AllowedRecordTypes.AnyObject, PrimitiveType.None)
         };
-
-        return new(objectId, referencedRecord, memberValues);
-    }
 }

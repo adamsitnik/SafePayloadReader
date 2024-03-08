@@ -15,23 +15,25 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class SystemClassWithMembersRecord : ClassRecord
 {
-    private SystemClassWithMembersRecord(ClassInfo classInfo, IReadOnlyList<object> memberValues)
-        : base(classInfo, memberValues)
+    private SystemClassWithMembersRecord(ClassInfo classInfo) : base(classInfo)
     {
     }
 
     public override RecordType RecordType => RecordType.SystemClassWithMembers;
 
+    internal override int ExpectedValuesCount => ClassInfo.MemberNames.Count;
+
     public override bool IsSerializedInstanceOf(Type type)
         => type.Assembly == typeof(object).Assembly
         && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
 
-    internal static SystemClassWithMembersRecord Parse(BinaryReader reader, RecordMap recordMap)
+    internal static SystemClassWithMembersRecord Parse(BinaryReader reader)
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         // the only difference with ClassWithMembersRecord is that we don't read library id here
-        IReadOnlyList<object> values = ReadRecords(reader, recordMap, classInfo.MemberNames.Count);
-
-        return new(classInfo, values);
+        return new(classInfo);
     }
+
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetNextAllowedRecordType()
+        => (AllowedRecordTypes.AnyObject, PrimitiveType.None);
 }

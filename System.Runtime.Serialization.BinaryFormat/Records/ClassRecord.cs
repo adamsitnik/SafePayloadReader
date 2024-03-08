@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -15,10 +16,10 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 public abstract class ClassRecord : SerializationRecord
 {
-    private protected ClassRecord(ClassInfo classInfo, IReadOnlyList<object> memberValues)
+    private protected ClassRecord(ClassInfo classInfo)
     {
         ClassInfo = classInfo;
-        MemberValues = memberValues;
+        MemberValues = new();
     }
 
     public string TypeName => ClassInfo.Name;
@@ -28,9 +29,11 @@ public abstract class ClassRecord : SerializationRecord
 
     internal override int ObjectId => ClassInfo.ObjectId;
 
+    internal abstract int ExpectedValuesCount { get; }
+
     internal ClassInfo ClassInfo { get; }
 
-    internal IReadOnlyList<object?> MemberValues { get; }
+    internal List<object?> MemberValues { get; }
 
     /// <summary>
     /// Retrieves the value of provided field.
@@ -48,12 +51,33 @@ public abstract class ClassRecord : SerializationRecord
         {
             int index = ClassInfo.MemberNames[memberName];
 
-            object value = MemberValues[index];
+            object? value = MemberValues[index];
             if (value is SerializationRecord record)
             {
                 return record.GetValue();
             }
             return value;
+        }
+    }
+
+    internal abstract (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetNextAllowedRecordType();
+
+    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
+    {
+        Debug.Assert(!(nextRecord is NullsRecord nullsRecord && nullsRecord.NullCount > 1));
+
+        HandleNextValue(nextRecord, info);
+    }
+
+    internal override void HandleNextValue(object value, NextInfo info)
+    {
+        MemberValues.Add(value);
+
+        if (MemberValues.Count < ExpectedValuesCount)
+        {
+            (AllowedRecordTypes allowed, PrimitiveType primitiveType) = GetNextAllowedRecordType();
+
+            info.Stack.Push(info.With(allowed, primitiveType));
         }
     }
 }

@@ -12,6 +12,10 @@
 /// </remarks>
 internal enum PrimitiveType : byte
 {
+    /// <summary>
+    /// Used internally to express no value
+    /// </summary>
+    None = 0,
     Boolean = 1,
     Byte = 2,
     Char = 3,

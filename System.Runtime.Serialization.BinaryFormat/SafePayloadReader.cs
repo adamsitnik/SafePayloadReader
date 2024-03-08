@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -47,7 +48,7 @@ public static class SafePayloadReader
         else if (typeof(T) == typeof(DateTime))
         {
             long raw = (long)result.MemberValues[0]!;
-            return (T)(object)SerializationRecord.CreateDateTimeFromData(raw);
+            return (T)(object)BinaryReaderExtensions.CreateDateTimeFromData(raw);
         }
         else if (typeof(T) == typeof(TimeSpan))
         {
@@ -143,23 +144,73 @@ public static class SafePayloadReader
 
     private static SerializationRecord Read(BinaryReader reader)
     {
+        Stack<NextInfo> readStack = new();
         RecordMap recordMap = new();
 
         // Everything has to start with a header
-        ReadNext(reader, recordMap, AllowedRecordTypes.SerializedStreamHeader, out _);
-        // and can be followed by any Data and a MessageEnd
-        const AllowedRecordTypes allowed = AllowedRecordTypes.AnyData | AllowedRecordTypes.MessageEnd;
+        SerializedStreamHeaderRecord header = (SerializedStreamHeaderRecord)ReadNextNonRecursive(reader, recordMap, AllowedRecordTypes.SerializedStreamHeader, out _);
+        // and can be followed by any Object, BinaryLibrary and a MessageEnd
+        const AllowedRecordTypes allowed = AllowedRecordTypes.AnyObject | AllowedRecordTypes.BinaryLibrary | AllowedRecordTypes.MessageEnd;
 
         RecordType recordType;
         do
         {
-            ReadNext(reader, recordMap, allowed, out recordType);
+            while (readStack.Count > 0)
+            {
+                NextInfo nextInfo = readStack.Pop();
+
+                if (nextInfo.Allowed != AllowedRecordTypes.None)
+                {
+                    SerializationRecord nextRecord = ReadNext(reader, recordMap, readStack, nextInfo.Allowed, out _);
+
+                    nextInfo.Parent.HandleNextRecord(nextRecord, nextInfo);
+                }
+                else
+                {
+                    object value = reader.ReadPrimitiveType(nextInfo.PrimitiveType);
+
+                    nextInfo.Parent.HandleNextValue(value, nextInfo);
+                }
+            }
+
+            ReadNext(reader, recordMap, readStack, allowed, out recordType);
         } while (recordType != RecordType.MessageEnd);
 
-        return recordMap[1]; // top level record always has ObjectId == 1
+        return recordMap[header.RootId];
     }
 
-    internal static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap,
+    private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap,
+        Stack<NextInfo> readStack, AllowedRecordTypes allowed, out RecordType recordType)
+    {
+        recordType = (RecordType)reader.ReadByte();
+
+        if (((uint)allowed & (1u << (int)recordType)) == 0)
+        {
+            throw new SerializationException($"Unexpected type seen: {recordType}.");
+        }
+
+        SerializationRecord? record = recordType switch
+        {
+            RecordType.ArraySingleObject => Enqueue(ArraySingleObjectRecord.Parse(reader), readStack),
+            RecordType.BinaryArray => Enqueue(BinaryArrayRecord.Parse(reader), readStack),
+            RecordType.ClassWithId => Enqueue(ClassWithIdRecord.Parse(reader, recordMap), readStack),
+            RecordType.ClassWithMembers => Enqueue(ClassWithMembersRecord.Parse(reader, recordMap), readStack),
+            RecordType.ClassWithMembersAndTypes => Enqueue(ClassWithMembersAndTypesRecord.Parse(reader, recordMap), readStack),
+            RecordType.SystemClassWithMembers => Enqueue(SystemClassWithMembersRecord.Parse(reader), readStack),
+            RecordType.SystemClassWithMembersAndTypes => Enqueue(SystemClassWithMembersAndTypesRecord.Parse(reader), readStack),
+            _ => null
+        };
+
+        if (record is not null)
+        {
+            recordMap.Add(record);
+            return record;
+        }
+
+        return HandleNonRecursive(recordType, reader, recordMap);
+    }
+
+    internal static SerializationRecord ReadNextNonRecursive(BinaryReader reader, RecordMap recordMap,
         AllowedRecordTypes allowed, out RecordType recordType)
     {
         recordType = (RecordType)reader.ReadByte();
@@ -169,17 +220,22 @@ public static class SafePayloadReader
             throw new SerializationException($"Unexpected type seen: {recordType}.");
         }
 
+        return HandleNonRecursive(recordType, reader, recordMap);
+    }
+
+    /// <summary>
+    /// This method is responsible for parsing non-recursive records.
+    /// </summary>
+    private static SerializationRecord HandleNonRecursive(RecordType recordType, BinaryReader reader, RecordMap recordMap)
+    {
         SerializationRecord record = recordType switch
         {
-            RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader, recordMap),
             RecordType.ArraySinglePrimitive => ArraySinglePrimitiveRecord<int>.Parse(reader),
+            // Parsing string[] calls ReadNextNonRecursive, but with limited types that can be parsed
+            // and no possibility to get unbounded recursion.
             RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader, recordMap),
-            RecordType.BinaryArray => BinaryArrayRecord.Parse(reader, recordMap),
             RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
             RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
-            RecordType.ClassWithId => ClassWithIdRecord.Parse(reader, recordMap),
-            RecordType.ClassWithMembers => ClassWithMembersRecord.Parse(reader, recordMap),
-            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
             RecordType.MemberPrimitiveTyped => MemberPrimitiveTypedRecord.Parse(reader),
             RecordType.MemberReference => MemberReferenceRecord.Parse(reader, recordMap),
             RecordType.MessageEnd => MessageEndRecord.Singleton,
@@ -187,11 +243,9 @@ public static class SafePayloadReader
             RecordType.ObjectNullMultiple => ObjectNullMultipleRecord.Parse(reader),
             RecordType.ObjectNullMultiple256 => ObjectNullMultiple256Record.Parse(reader),
             RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
-            RecordType.SystemClassWithMembers => SystemClassWithMembersRecord.Parse(reader, recordMap),
-            RecordType.SystemClassWithMembersAndTypes => SystemClassWithMembersAndTypesRecord.Parse(reader, recordMap),
             RecordType.CrossAppDomainAssembly or RecordType.CrossAppDomainMap or RecordType.CrossAppDomainString
                 => throw new NotSupportedException("Cross domain is not supported by design"),
-            RecordType.MethodCall or RecordType.MethodReturn 
+            RecordType.MethodCall or RecordType.MethodReturn
                 => throw new NotSupportedException("Remote invocation is not supported by design"),
             _ => throw new SerializationException($"Invalid RecordType value: {recordType}")
         };
@@ -199,5 +253,42 @@ public static class SafePayloadReader
         recordMap.Add(record);
 
         return record;
+    }
+
+    private static SerializationRecord Enqueue(ArraySingleObjectRecord arrayRecord, Stack<NextInfo> readStack)
+    {
+        if (arrayRecord.Length > 0)
+        {
+            // An array of object can contain any Object or multiple nulls
+            const AllowedRecordTypes allowed = AllowedRecordTypes.AnyObject | AllowedRecordTypes.Nulls;
+
+            readStack.Push(new(allowed, arrayRecord, readStack));
+        }
+
+        return arrayRecord;
+    }
+
+    private static SerializationRecord Enqueue(BinaryArrayRecord arrayRecord, Stack<NextInfo> readStack)
+    {
+        if (arrayRecord.Length > 0)
+        {
+            (AllowedRecordTypes allowed, PrimitiveType primitiveType) = arrayRecord.GetAllowedRecordType();
+
+            readStack.Push(new(allowed, arrayRecord, readStack, primitiveType));
+        }
+
+        return arrayRecord;
+    }
+
+    private static SerializationRecord Enqueue(ClassRecord classRecord, Stack<NextInfo> readStack)
+    {
+        if (classRecord.ExpectedValuesCount > 0)
+        {
+            (AllowedRecordTypes allowed, PrimitiveType primitiveType) = classRecord.GetNextAllowedRecordType();
+
+            readStack.Push(new(allowed, classRecord, readStack, primitiveType));
+        }
+
+        return classRecord;
     }
 }

@@ -59,7 +59,7 @@ internal sealed class MemberPrimitiveTypedRecord : SerializationRecord
     internal static MemberPrimitiveTypedRecord Parse(BinaryReader reader)
     {
         PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
-        object value = ReadPrimitiveType(reader, primitiveType);
+        object value = reader.ReadPrimitiveType(primitiveType);
 
         return new(primitiveType, value);
     }

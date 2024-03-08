@@ -1,12 +1,11 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
 {
-    private SystemClassWithMembersAndTypesRecord(ClassInfo classInfo, MemberTypeInfo memberTypeInfo, IReadOnlyList<object> values)
-        : base(classInfo, values)
+    private SystemClassWithMembersAndTypesRecord(ClassInfo classInfo, MemberTypeInfo memberTypeInfo)
+        : base(classInfo)
     {
         MemberTypeInfo = memberTypeInfo;
     }
@@ -15,20 +14,20 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
 
     public MemberTypeInfo MemberTypeInfo { get; }
 
+    internal override int ExpectedValuesCount => MemberTypeInfo.Infos.Count;
+
     public override bool IsSerializedInstanceOf(Type type)
         => type.Assembly == typeof(object).Assembly
         && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
 
-    internal static SystemClassWithMembersAndTypesRecord Parse(
-        BinaryReader reader, RecordMap recordMap)
+    internal static SystemClassWithMembersAndTypesRecord Parse(BinaryReader reader)
     {
         ClassInfo classInfo = ClassInfo.Parse(reader);
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Count);
         // the only difference with ClassWithMembersAndTypesRecord is that we don't read library id here
-
-        // TODO: remove unbounded recursion
-        IReadOnlyList<object> values = memberTypeInfo.ReadValues(reader, recordMap);
-
-        return new(classInfo, memberTypeInfo, values);
+        return new(classInfo, memberTypeInfo);
     }
+
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetNextAllowedRecordType()
+        => MemberTypeInfo.GetNextAllowedRecordType(MemberValues.Count);
 }

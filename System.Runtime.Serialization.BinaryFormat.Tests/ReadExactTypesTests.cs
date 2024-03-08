@@ -75,6 +75,37 @@ public class ReadExactTypesTests : ReadTests
     }
 
     [Serializable]
+    public class CustomTypeWithObjectField
+    {
+        public object? ActualObject;
+        public object? SomeObject;
+        public object? ReferenceToSameObject;
+        public object? ReferenceToSelf;
+    }
+
+    [Fact]
+    public void CanRead_CustomTypeWithObjectFields()
+    {
+        CustomTypeWithObjectField input = new()
+        {
+            ActualObject = new object(),
+            SomeObject = "string"
+        };
+
+        input.ReferenceToSameObject = input.ActualObject;
+        input.ReferenceToSelf = input;
+
+        using MemoryStream stream = Serialize(input);
+
+        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithObjectField>(stream);
+
+        Assert.Equal(input.SomeObject, serializationRecord[nameof(CustomTypeWithObjectField.SomeObject)]);
+        Assert.Same(serializationRecord[nameof(CustomTypeWithObjectField.ActualObject)],
+                    serializationRecord[nameof(CustomTypeWithObjectField.ReferenceToSameObject)]);
+        Assert.Same(serializationRecord, serializationRecord[nameof(CustomTypeWithObjectField.ReferenceToSelf)]);
+    }
+
+    [Serializable]
     public class CustomTypeWithPrimitiveArrayFields
     {
         public byte[]? Bytes;

@@ -15,15 +15,18 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 {
-    private ArraySingleObjectRecord(ArrayInfo arrayInfo, List<SerializationRecord> records)
+    private ArraySingleObjectRecord(ArrayInfo arrayInfo)
         : base(arrayInfo)
     {
-        Records = records;
+        Records = new();
+        RecordsToRead = arrayInfo.Length;
     }
 
     public override RecordType RecordType => RecordType.ArraySingleObject;
 
-    private List<SerializationRecord> Records { get; }
+    internal List<SerializationRecord> Records { get; }
+
+    private int RecordsToRead { get; set; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
@@ -59,16 +62,24 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
         return values;
     }
 
-    internal static ArraySingleObjectRecord Parse(BinaryReader reader, RecordMap recordMap)
+    internal static ArraySingleObjectRecord Parse(BinaryReader reader)
+        => new(ArrayInfo.Parse(reader));
+
+    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
     {
-        ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
+        RecordsToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
 
-        // An array of object can contain any Data, which is everything beside SerializedStreamHeader and MessageEnd.
-        const AllowedRecordTypes allowed = AllowedRecordTypes.AnyData;
+        if (RecordsToRead < 0)
+        {
+            // The only way to get here is to read a multiple null record with Count
+            // larger than the number of array items that were left to read.
+            ThrowHelper.ThrowUnexpectedNullRecordCount();
+        }
+        else if (RecordsToRead > 0)
+        {
+            info.Stack.Push(info);
+        }
 
-        // TODO: remove unbounded recursion
-        List<SerializationRecord> records = ReadRecords(reader, recordMap, arrayInfo.Length, allowed);
-
-        return new(arrayInfo, records);
+        Records.Add(nextRecord);
     }
 }

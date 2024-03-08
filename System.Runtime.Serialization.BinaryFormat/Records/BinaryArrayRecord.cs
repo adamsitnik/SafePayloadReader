@@ -6,12 +6,13 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 {
     internal BinaryArrayRecord(ArrayInfo arrayInfo, BinaryArrayType arrayType, int rank,
-        MemberTypeInfo memberTypeInfo, List<SerializationRecord> records) : base(arrayInfo)
+        MemberTypeInfo memberTypeInfo) : base(arrayInfo)
     {
         ArrayType = arrayType;
         Rank = rank;
         MemberTypeInfo = memberTypeInfo;
-        Records = records;
+        RecordsToRead = arrayInfo.Length;
+        Records = new();
     }
 
     public override RecordType RecordType => RecordType.BinaryArray;
@@ -21,6 +22,8 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
     private int Rank { get; }
 
     private MemberTypeInfo MemberTypeInfo { get; }
+
+    private int RecordsToRead { get; set; }
 
     internal List<SerializationRecord> Records { get; }
 
@@ -64,7 +67,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
 
     internal override object GetValue() => Deserialize();
 
-    internal static BinaryArrayRecord Parse(BinaryReader reader, RecordMap recordMap)
+    internal static BinaryArrayRecord Parse(BinaryReader reader)
     {
         int objectId = reader.ReadInt32();
         BinaryArrayType arrayType = (BinaryArrayType)reader.ReadByte();
@@ -77,24 +80,38 @@ internal sealed class BinaryArrayRecord : ArrayRecord<ClassRecord?>
         }
 
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1);
-        List<SerializationRecord> records = new();
-        (BinaryType BinaryType, object? AdditionalInfo) = memberTypeInfo.Infos[0];
 
-        int recordsSize = 0;
-        while (recordsSize < length)
+        return new(new ArrayInfo(objectId, length), arrayType, rank, memberTypeInfo);
+    }
+
+    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
+    {
+        RecordsToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
+
+        if (RecordsToRead < 0)
         {
-            SerializationRecord record = (SerializationRecord)ReadValue(reader, recordMap, BinaryType, AdditionalInfo);
-
-            int recordSize = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
-            if (recordsSize + recordSize > length)
-            {
-                throw new SerializationException($"Unexpected Null Record count: {recordSize}.");
-            }
-
-            records.Add(record);
-            recordsSize += recordSize;
+            // The only way to get here is to read a multiple null record with Count
+            // larger than the number of array items that were left to read.
+            ThrowHelper.ThrowUnexpectedNullRecordCount();
+        }
+        else if (RecordsToRead > 0)
+        {
+            info.Stack.Push(info);
         }
 
-        return new(new ArrayInfo(objectId, length), arrayType, rank, memberTypeInfo, records);
+        Records.Add(nextRecord);
+    }
+
+    internal (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
+    {
+        (AllowedRecordTypes allowed, PrimitiveType primitiveType) = MemberTypeInfo.GetNextAllowedRecordType(0);
+
+        if (allowed != AllowedRecordTypes.None)
+        {
+            // It's an array, it can also contain multiple nulls
+            return (allowed | AllowedRecordTypes.Nulls, primitiveType);
+        }
+
+        return (allowed, primitiveType);
     }
 }

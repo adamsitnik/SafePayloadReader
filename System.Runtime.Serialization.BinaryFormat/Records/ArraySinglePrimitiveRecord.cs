@@ -121,7 +121,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
             }
             else if (typeof(T) == typeof(DateTime))
             {
-                values.Add((T)(object)CreateDateTimeFromData(reader.ReadInt64()));
+                values.Add((T)(object)BinaryReaderExtensions.CreateDateTimeFromData(reader.ReadInt64()));
             }
             else if (typeof(T) == typeof(TimeSpan))
             {
