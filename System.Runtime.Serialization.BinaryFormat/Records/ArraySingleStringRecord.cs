@@ -85,7 +85,7 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
         int recordsSize = 0;
         while (recordsSize < arrayInfo.Length)
         {
-            SerializationRecord record = SafePayloadReader.ReadNextNonRecursive(reader, recordsMap, allowedTypes, out _);
+            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, allowedTypes, out _);
 
             int recordSize = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
             if (recordsSize + recordSize > arrayInfo.Length)

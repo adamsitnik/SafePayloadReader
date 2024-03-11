@@ -1,5 +1,8 @@
-﻿namespace System.Runtime.Serialization.BinaryFormat;
+﻿using System.Diagnostics;
 
+namespace System.Runtime.Serialization.BinaryFormat;
+
+[DebuggerDisplay("{RecordType}, {ObjectId}")]
 public abstract class SerializationRecord
 {
     internal const int NoId = 0;

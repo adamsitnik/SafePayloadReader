@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -12,6 +13,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///   </see>
 ///  </para>
 /// </remarks>
+[DebuggerDisplay("{Length}")]
 internal readonly struct ArrayInfo
 {
     internal ArrayInfo(int objectId, int length)

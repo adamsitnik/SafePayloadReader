@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -13,6 +14,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///   </see>
 ///  </para>
 /// </remarks>
+[DebuggerDisplay("{Name}")]
 internal sealed class ClassInfo
 {
     private ClassInfo(int objectId, string name, Dictionary<string, int> memberNames)

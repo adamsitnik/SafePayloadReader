@@ -1,7 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
+[DebuggerDisplay("{Parent.RecordType}, {Allowed}, {PrimitiveType}")]
 internal readonly struct NextInfo
 {
     internal NextInfo(AllowedRecordTypes allowed, SerializationRecord parent,
