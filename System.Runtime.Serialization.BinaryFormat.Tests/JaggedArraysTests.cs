@@ -17,7 +17,8 @@ public class JaggedArraysTests : ReadTests
 
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(stream);
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
     }
 
     [Fact]
@@ -31,7 +32,8 @@ public class JaggedArraysTests : ReadTests
 
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(stream);
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
     }
 
     [Fact]
@@ -45,7 +47,8 @@ public class JaggedArraysTests : ReadTests
 
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(stream);
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
     }
 
     [Serializable]
@@ -65,6 +68,7 @@ public class JaggedArraysTests : ReadTests
 
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(stream);
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
     }
 }

@@ -188,7 +188,7 @@ public static class SafePayloadReader
         return recordMap[header.RootId];
     }
 
-    internal static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap, 
+    private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap, 
         AllowedRecordTypes allowed, out RecordType recordType)
     {
         recordType = (RecordType)reader.ReadByte();
@@ -202,10 +202,8 @@ public static class SafePayloadReader
         {
             RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader),
             RecordType.ArraySinglePrimitive => ArraySinglePrimitiveRecord<int>.Parse(reader),
-            // Parsing string[] calls ReadNext, but with limited types that can be parsed
-            // and no possibility to get unbounded recursion.
-            RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader, recordMap),
-            RecordType.BinaryArray => BinaryArrayRecord.Parse(reader),
+            RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader),
+            RecordType.BinaryArray => BinaryArrayRecord<ClassRecord>.Parse(reader),
             RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
             RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
             RecordType.ClassWithId => ClassWithIdRecord.Parse(reader, recordMap),
@@ -251,24 +249,11 @@ public static class SafePayloadReader
                 readStack.Push(new(allowed, classRecord, readStack, primitiveType));
             }
         }
-        else if (record is ArraySingleObjectRecord arrayOfObjects)
+        else if (record is ArrayRecord arrayRecord && arrayRecord.ValuesToRead > 0)
         {
-            if (arrayOfObjects.Length > 0)
-            {
-                // An array of objects can contain any Object or multiple nulls.
-                const AllowedRecordTypes allowed = AllowedRecordTypes.AnyObject | AllowedRecordTypes.Nulls;
+            (AllowedRecordTypes allowed, PrimitiveType primitiveType) = arrayRecord.GetAllowedRecordType();
 
-                readStack.Push(new(allowed, arrayOfObjects, readStack));
-            }
-        }
-        else if (record is BinaryArrayRecord arrayOfT)
-        {
-            if (arrayOfT.Length > 0)
-            {
-                (AllowedRecordTypes allowed, PrimitiveType primitiveType) = arrayOfT.GetAllowedRecordType();
-
-                readStack.Push(new(allowed, arrayOfT, readStack, primitiveType));
-            }
+            readStack.Push(new(allowed, arrayRecord, readStack, primitiveType));
         }
     }
 }

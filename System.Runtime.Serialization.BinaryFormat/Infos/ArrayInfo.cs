@@ -13,22 +13,30 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///   </see>
 ///  </para>
 /// </remarks>
-[DebuggerDisplay("{Length}")]
+[DebuggerDisplay("Length={Length}, {ArrayType}, rank={Rank}")]
 internal readonly struct ArrayInfo
 {
-    internal ArrayInfo(int objectId, int length)
+    internal ArrayInfo(int objectId, uint length, BinaryArrayType arrayType = BinaryArrayType.Single, int rank = 1)
     {
-        Length = length;
         ObjectId = objectId;
+        Length = length;
+        ArrayType = arrayType;
+        Rank = rank;
     }
 
     internal int ObjectId { get; }
 
-    internal int Length { get; }
+    internal uint Length { get; }
+
+    internal BinaryArrayType ArrayType { get; }
+
+    internal int Rank { get; }
 
     internal static ArrayInfo Parse(BinaryReader reader)
+        => new(reader.ReadInt32(), (uint)ParseValidArrayLength(reader));
+
+    internal static int ParseValidArrayLength(BinaryReader reader)
     {
-        int id = reader.ReadInt32();
         int length = reader.ReadInt32();
 
         if (length < 0 || length > 2147483591) // Array.MaxLength
@@ -36,6 +44,6 @@ internal readonly struct ArrayInfo
             throw new SerializationException($"Invalid array length: {length}");
         }
 
-        return new(id, length);
+        return length;
     }
 }

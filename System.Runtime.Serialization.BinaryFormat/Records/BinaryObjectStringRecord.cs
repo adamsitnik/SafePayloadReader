@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics;
+using System.IO;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -12,6 +13,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///   </see>
 ///  </para>
 /// </remarks>
+[DebuggerDisplay("{Value}, {ObjectId}")]
 internal sealed class BinaryObjectStringRecord : SerializationRecord
 {
     private BinaryObjectStringRecord(int objectId, string value)

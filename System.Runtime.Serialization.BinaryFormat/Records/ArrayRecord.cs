@@ -1,17 +1,32 @@
 ﻿namespace System.Runtime.Serialization.BinaryFormat;
 
-public abstract class ArrayRecord<T> : SerializationRecord
+public abstract class ArrayRecord : SerializationRecord
 {
-    private protected ArrayRecord(ArrayInfo arrayInfo) => ArrayInfo = arrayInfo;
+    private protected ArrayRecord(ArrayInfo arrayInfo)
+    {
+        ArrayInfo = arrayInfo;
+        ValuesToRead = arrayInfo.Length;
+    }
 
     /// <summary>
     /// Length of the array.
     /// </summary>
-    public int Length => ArrayInfo.Length;
+    public uint Length => ArrayInfo.Length;
 
     internal override int ObjectId => ArrayInfo.ObjectId;
 
-    private ArrayInfo ArrayInfo { get; }
+    private protected ArrayInfo ArrayInfo { get; }
+
+    internal long ValuesToRead { get; private protected set; }
+
+    internal abstract (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType();
+}
+
+public abstract class ArrayRecord<T> : ArrayRecord
+{
+    private protected ArrayRecord(ArrayInfo arrayInfo) : base(arrayInfo)
+    {
+    }
 
     /// <summary>
     /// Allocates an array of <typeparamref name="T"/> and fills it with the data provided in the serialized records (in case of primitive types like <see cref="string"/> or <see cref="int"/>) or the serialized records themselves.
@@ -32,7 +47,7 @@ public abstract class ArrayRecord<T> : SerializationRecord
     {
         if (Length > maxLength)
         {
-            throw new SerializationException($"The serialized array length ({Length}) was larger that the configured limit {maxLength}");
+            ThrowHelper.ThrowMaxArrayLength(maxLength, Length);
         }
 
         return Deserialize(allowNulls);

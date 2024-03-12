@@ -16,10 +16,14 @@ public class RectangularArraysTests : ReadTests
                 array[i, j] = i * j;
             }   
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(int[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(string[,])));
+        Assert.Equal(array, arrayRecord.Deserialize());
     }
 
     [Fact]
@@ -33,10 +37,14 @@ public class RectangularArraysTests : ReadTests
                 array[i, j] = $"{i}, {j}";
             }
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(string[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,])));
+        Assert.Equal(array, arrayRecord.Deserialize());
     }
 
     [Fact]
@@ -49,10 +57,14 @@ public class RectangularArraysTests : ReadTests
             array[i, 1] = $"{i}, 1";
             array[i, 2] = null;
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(object[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,])));
+        Assert.Equal(array, arrayRecord.Deserialize());
     }
 
     [Serializable]
@@ -72,10 +84,14 @@ public class RectangularArraysTests : ReadTests
                 array[i, j] = new() { I = i, J = j };
             }
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        // TODO: make it work if it's even possible
+        // Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(ComplexType2D[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,])));
     }
 
     [Fact]
@@ -92,10 +108,15 @@ public class RectangularArraysTests : ReadTests
                 }
             }
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(int[,,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(string[,,])));
+        Assert.Equal(array, arrayRecord.Deserialize());
     }
 
     [Fact]
@@ -112,10 +133,15 @@ public class RectangularArraysTests : ReadTests
                 }
             }
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(string[,,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(string[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,,])));
+        Assert.Equal(array, arrayRecord.Deserialize());
     }
 
     [Fact]
@@ -128,10 +154,15 @@ public class RectangularArraysTests : ReadTests
             array[i, 1, 0] = $"{i}, 1";
             array[i, 2, 0] = null;
         } 
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(object[,,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(object[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,,])));
+        Assert.Equal(array, arrayRecord.Deserialize());
     }
 
     [Serializable]
@@ -154,9 +185,14 @@ public class RectangularArraysTests : ReadTests
                 }
             }
         }
-
         using MemoryStream stream = Serialize(array);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        RectangularArrayRecord arrayRecord = (RectangularArrayRecord)SafePayloadReader.Read(stream);
+
+        Assert.Equal((uint)array.Length, arrayRecord.Length);
+        // TODO: make it work if it's even possible
+        //Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(ComplexType3D[,,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(ComplexType3D[,])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(int[,,])));
     }
 }

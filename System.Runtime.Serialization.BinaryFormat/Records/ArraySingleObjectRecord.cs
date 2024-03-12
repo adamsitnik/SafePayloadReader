@@ -19,14 +19,11 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
         : base(arrayInfo)
     {
         Records = new();
-        RecordsToRead = arrayInfo.Length;
     }
 
     public override RecordType RecordType => RecordType.ArraySingleObject;
 
     internal List<SerializationRecord> Records { get; }
-
-    private int RecordsToRead { get; set; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
@@ -65,17 +62,25 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
     internal static ArraySingleObjectRecord Parse(BinaryReader reader)
         => new(ArrayInfo.Parse(reader));
 
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
+    {
+        // An array of objects can contain any Object or multiple nulls.
+        const AllowedRecordTypes allowed = AllowedRecordTypes.AnyObject | AllowedRecordTypes.Nulls;
+
+        return (allowed, default);
+    }
+
     internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
     {
-        RecordsToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
+        ValuesToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
 
-        if (RecordsToRead < 0)
+        if (ValuesToRead < 0)
         {
             // The only way to get here is to read a multiple null record with Count
             // larger than the number of array items that were left to read.
             ThrowHelper.ThrowUnexpectedNullRecordCount();
         }
-        else if (RecordsToRead > 0)
+        else if (ValuesToRead > 0)
         {
             info.Stack.Push(info);
         }

@@ -15,14 +15,41 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private ArraySingleStringRecord(ArrayInfo arrayInfo, List<SerializationRecord> records) : base(arrayInfo)
-        => Records = records;
+    private ArraySingleStringRecord(ArrayInfo arrayInfo) : base(arrayInfo)
+        => Records = new();
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
     private List<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
+
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
+    {
+        // An array of string can consist of string(s), null(s) and reference(s) to string(s).
+        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString 
+            | AllowedRecordTypes.Nulls | AllowedRecordTypes.MemberReference;
+
+        return (allowedTypes, default);
+    }
+
+    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
+    {
+        // BinaryObjectString and ObjectNull has a size == 1, but
+        // ObjectNullMultiple256Record and ObjectNullMultipleRecord specify the number of null elements
+        // so their size differs.
+        ValuesToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
+        if (ValuesToRead < 0)
+        {
+            ThrowHelper.ThrowUnexpectedNullRecordCount();
+        }
+        else if (ValuesToRead > 0)
+        {
+            info.Stack.Push(info);
+        }
+
+        Records.Add(nextRecord);
+    }
 
     protected override string?[] Deserialize(bool allowNulls)
     {
@@ -66,37 +93,6 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
         return values;
     }
 
-    internal static ArraySingleStringRecord Parse(BinaryReader reader, RecordMap recordsMap)
-    {
-        ArrayInfo arrayInfo = ArrayInfo.Parse(reader);
-
-        // An array of string can consist of string(s), null(s) and reference(s) to string(s).
-        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString | AllowedRecordTypes.Nulls | AllowedRecordTypes.MemberReference;
-
-        // We must not pre-allocate an array of given size, as it could be used as a vector of attack.
-        // Example: Define a class with 20 string array fields, each of them being an array
-        // of max size and containing just a single ObjectNullMultipleRecord record
-        // that specifies that the whole array is full of nulls.
-        List<SerializationRecord> records = new();
-
-        // BinaryObjectString and ObjectNull has a size == 1, but
-        // ObjectNullMultiple256Record and ObjectNullMultipleRecord specify the number of null elements
-        // so their size differs.
-        int recordsSize = 0;
-        while (recordsSize < arrayInfo.Length)
-        {
-            SerializationRecord record = SafePayloadReader.ReadNext(reader, recordsMap, allowedTypes, out _);
-
-            int recordSize = record is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
-            if (recordsSize + recordSize > arrayInfo.Length)
-            {
-                throw new SerializationException($"Unexpected Null Record count: {recordSize}.");
-            }
-
-            records.Add(record);
-            recordsSize += recordSize;
-        }
-
-        return new(arrayInfo, records);
-    }
+    internal static ArraySingleStringRecord Parse(BinaryReader reader)
+        => new(ArrayInfo.Parse(reader));
 }

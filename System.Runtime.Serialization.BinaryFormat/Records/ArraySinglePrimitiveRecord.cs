@@ -18,7 +18,11 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
     where T : unmanaged
 {
-    internal ArraySinglePrimitiveRecord(ArrayInfo arrayInfo, IReadOnlyList<T> values) : base(arrayInfo) => Values = values;
+    internal ArraySinglePrimitiveRecord(ArrayInfo arrayInfo, IReadOnlyList<T> values) : base(arrayInfo)
+    {
+        Values = values;
+        ValuesToRead = 0; // there is nothing to read anymore
+    }
 
     public override RecordType RecordType => RecordType.ArraySinglePrimitive;
 
@@ -30,12 +34,12 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     internal override object GetValue() => Deserialize();
 
-    internal static SerializationRecord Parse(BinaryReader reader)
+    internal static ArrayRecord Parse(BinaryReader reader)
     {
         ArrayInfo info = ArrayInfo.Parse(reader);
         PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
 
-        int length = info.Length;
+        int length = (int)info.Length;
 
         return primitiveType switch
         {
@@ -56,6 +60,74 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
             PrimitiveType.TimeSpan => new ArraySinglePrimitiveRecord<TimeSpan>(info, ReadPrimitiveTypes<TimeSpan>(reader, length)),
             _ => throw new SerializationException($"Failure trying to read primitive '{primitiveType}'"),
         };
+    }
+
+    internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
+    {
+        if (typeof(T) == typeof(byte))
+        {
+            return (default, PrimitiveType.Byte);
+        }
+        else if (typeof(T) == typeof(bool))
+        {
+            return (default, PrimitiveType.Boolean);
+        }
+        else if (typeof(T) == typeof(sbyte))
+        {
+            return (default, PrimitiveType.SByte);
+        }
+        else if (typeof(T) == typeof(char))
+        {
+            return (default, PrimitiveType.Char);
+        }
+        else if (typeof(T) == typeof(short))
+        {
+            return (default, PrimitiveType.Int16);
+        }
+        else if (typeof(T) == typeof(ushort))
+        {
+            return (default, PrimitiveType.UInt16);
+        }
+        else if (typeof(T) == typeof(int))
+        {
+            return (default, PrimitiveType.Int32);
+        }
+        else if (typeof(T) == typeof(uint))
+        {
+            return (default, PrimitiveType.UInt32);
+        }
+        else if (typeof(T) == typeof(long))
+        {
+            return (default, PrimitiveType.Int64);
+        }
+        else if (typeof(T) == typeof(ulong))
+        {
+            return (default, PrimitiveType.UInt64);
+        }
+        else if (typeof(T) == typeof(float))
+        {
+            return (default, PrimitiveType.Single);
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            return (default, PrimitiveType.Double);
+        }
+        else if (typeof(T) == typeof(decimal))
+        {
+            return (default, PrimitiveType.Decimal);
+        }
+        else if (typeof(T) == typeof(DateTime))
+        {
+            return (default, PrimitiveType.DateTime);
+        }
+        else if (typeof(T) == typeof(TimeSpan))
+        {
+            return (default, PrimitiveType.TimeSpan);
+        }
+        else
+        {
+            throw new NotSupportedException();
+        }
     }
 
     private static IReadOnlyList<T> ReadPrimitiveTypes<T>(BinaryReader reader, int count)
