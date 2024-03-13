@@ -15,19 +15,15 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 {
-    private ArraySingleObjectRecord(ArrayInfo arrayInfo)
-        : base(arrayInfo)
-    {
-        Records = new();
-    }
+    private ArraySingleObjectRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = new();
 
     public override RecordType RecordType => RecordType.ArraySingleObject;
 
-    internal List<SerializationRecord> Records { get; }
+    private List<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
-    protected override object?[] Deserialize(bool allowNulls)
+    protected override object?[] ToArrayOfT(bool allowNulls)
     {
         object?[] values = new object?[Length];
 
@@ -46,7 +42,7 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
             if (!allowNulls)
             {
-                throw new SerializationException("The array contained null(s)");
+                ThrowHelper.ThrowArrayContainedNull();
             }
 
             do
@@ -70,21 +66,5 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
         return (allowed, default);
     }
 
-    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
-    {
-        ValuesToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
-
-        if (ValuesToRead < 0)
-        {
-            // The only way to get here is to read a multiple null record with Count
-            // larger than the number of array items that were left to read.
-            ThrowHelper.ThrowUnexpectedNullRecordCount();
-        }
-        else if (ValuesToRead > 0)
-        {
-            info.Stack.Push(info);
-        }
-
-        Records.Add(nextRecord);
-    }
+    private protected override void AddValue(object value) => Records.Add((SerializationRecord)value);
 }

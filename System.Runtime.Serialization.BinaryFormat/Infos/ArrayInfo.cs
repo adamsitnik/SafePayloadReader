@@ -16,7 +16,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 [DebuggerDisplay("Length={Length}, {ArrayType}, rank={Rank}")]
 internal readonly struct ArrayInfo
 {
-    internal ArrayInfo(int objectId, uint length, BinaryArrayType arrayType = BinaryArrayType.Single, int rank = 1)
+    internal ArrayInfo(int objectId, uint length, ArrayType arrayType = ArrayType.Single, int rank = 1)
     {
         ObjectId = objectId;
         Length = length;
@@ -28,7 +28,7 @@ internal readonly struct ArrayInfo
 
     internal uint Length { get; }
 
-    internal BinaryArrayType ArrayType { get; }
+    internal ArrayType ArrayType { get; }
 
     internal int Rank { get; }
 

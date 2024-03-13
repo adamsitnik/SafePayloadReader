@@ -14,4 +14,7 @@ internal static class ThrowHelper
     internal static void ThrowMaxArrayLength(int limit, uint actual)
         => throw new SerializationException(
             $"The serialized array length ({actual}) was larger that the configured limit {limit}");
+
+    internal static void ThrowArrayContainedNull()
+        => throw new SerializationException("The array contained null(s)");
 }

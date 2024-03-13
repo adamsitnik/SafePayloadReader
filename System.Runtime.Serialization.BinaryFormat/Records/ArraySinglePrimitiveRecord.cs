@@ -30,9 +30,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 
-    protected override T[] Deserialize(bool allowNulls) => Values.ToArray();
-
-    internal override object GetValue() => Deserialize();
+    protected override T[] ToArrayOfT(bool allowNulls) => Values.ToArray();
 
     internal static ArrayRecord Parse(BinaryReader reader)
     {
@@ -63,72 +61,10 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
     }
 
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
-    {
-        if (typeof(T) == typeof(byte))
-        {
-            return (default, PrimitiveType.Byte);
-        }
-        else if (typeof(T) == typeof(bool))
-        {
-            return (default, PrimitiveType.Boolean);
-        }
-        else if (typeof(T) == typeof(sbyte))
-        {
-            return (default, PrimitiveType.SByte);
-        }
-        else if (typeof(T) == typeof(char))
-        {
-            return (default, PrimitiveType.Char);
-        }
-        else if (typeof(T) == typeof(short))
-        {
-            return (default, PrimitiveType.Int16);
-        }
-        else if (typeof(T) == typeof(ushort))
-        {
-            return (default, PrimitiveType.UInt16);
-        }
-        else if (typeof(T) == typeof(int))
-        {
-            return (default, PrimitiveType.Int32);
-        }
-        else if (typeof(T) == typeof(uint))
-        {
-            return (default, PrimitiveType.UInt32);
-        }
-        else if (typeof(T) == typeof(long))
-        {
-            return (default, PrimitiveType.Int64);
-        }
-        else if (typeof(T) == typeof(ulong))
-        {
-            return (default, PrimitiveType.UInt64);
-        }
-        else if (typeof(T) == typeof(float))
-        {
-            return (default, PrimitiveType.Single);
-        }
-        else if (typeof(T) == typeof(double))
-        {
-            return (default, PrimitiveType.Double);
-        }
-        else if (typeof(T) == typeof(decimal))
-        {
-            return (default, PrimitiveType.Decimal);
-        }
-        else if (typeof(T) == typeof(DateTime))
-        {
-            return (default, PrimitiveType.DateTime);
-        }
-        else if (typeof(T) == typeof(TimeSpan))
-        {
-            return (default, PrimitiveType.TimeSpan);
-        }
-        else
-        {
-            throw new NotSupportedException();
-        }
-    }
+        => throw new InvalidOperationException("This should never happen");
+
+    private protected override void AddValue(object value)
+        => throw new InvalidOperationException("This should never happen");
 
     private static IReadOnlyList<T> ReadPrimitiveTypes<T>(BinaryReader reader, int count)
         where T : unmanaged

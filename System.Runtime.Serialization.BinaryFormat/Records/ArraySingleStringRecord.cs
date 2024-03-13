@@ -15,14 +15,16 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private ArraySingleStringRecord(ArrayInfo arrayInfo) : base(arrayInfo)
-        => Records = new();
+    private ArraySingleStringRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = new();
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
     private List<SerializationRecord> Records { get; }
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
+
+    internal static ArraySingleStringRecord Parse(BinaryReader reader)
+        => new(ArrayInfo.Parse(reader));
 
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
     {
@@ -33,25 +35,9 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
         return (allowedTypes, default);
     }
 
-    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
-    {
-        // BinaryObjectString and ObjectNull has a size == 1, but
-        // ObjectNullMultiple256Record and ObjectNullMultipleRecord specify the number of null elements
-        // so their size differs.
-        ValuesToRead -= nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1;
-        if (ValuesToRead < 0)
-        {
-            ThrowHelper.ThrowUnexpectedNullRecordCount();
-        }
-        else if (ValuesToRead > 0)
-        {
-            info.Stack.Push(info);
-        }
+    private protected override void AddValue(object value) => Records.Add((SerializationRecord)value);
 
-        Records.Add(nextRecord);
-    }
-
-    protected override string?[] Deserialize(bool allowNulls)
+    protected override string?[] ToArrayOfT(bool allowNulls)
     {
         string?[] values = new string?[Length];
 
@@ -92,7 +78,4 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 
         return values;
     }
-
-    internal static ArraySingleStringRecord Parse(BinaryReader reader)
-        => new(ArrayInfo.Parse(reader));
 }

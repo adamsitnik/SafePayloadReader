@@ -135,16 +135,22 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithPrimitiveArrayFields>(stream);
+        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithPrimitiveArrayFields>(stream);
 
-        Assert.Equal(input.Bytes, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.Bytes)]);
-        Assert.Equal(input.SignedBytes, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.SignedBytes)]);
-        Assert.Equal(input.Shorts, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.Shorts)]);
-        Assert.Equal(input.UnsignedShorts, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.UnsignedShorts)]);
-        Assert.Equal(input.Integers, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.Integers)]);
-        Assert.Equal(input.UnsignedIntegers, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.UnsignedIntegers)]);
-        Assert.Equal(input.Longs, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.Longs)]);
-        Assert.Equal(input.UnsignedLongs, serializationRecord[nameof(CustomTypeWithPrimitiveArrayFields.UnsignedLongs)]);
+        Verify(input.Bytes, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.Bytes));
+        Verify(input.SignedBytes, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.SignedBytes));
+        Verify(input.Shorts, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.Shorts));
+        Verify(input.UnsignedShorts, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.UnsignedShorts));
+        Verify(input.Integers, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.Integers));
+        Verify(input.UnsignedIntegers, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.UnsignedIntegers));
+        Verify(input.Longs, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.Longs));
+        Verify(input.UnsignedLongs, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.UnsignedLongs));
+
+        static void Verify<T>(T[] expected, ClassRecord classRecord, string fieldName) where T : unmanaged
+        {
+            var arrayRecord = (ArrayRecord<T>)classRecord[fieldName]!;
+            Assert.Equal(expected, arrayRecord.ToArray());
+        }
     }
 
     [Serializable]
@@ -169,7 +175,7 @@ public class ReadExactTypesTests : ReadTests
         ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithStringArrayField>(stream);
         ArrayRecord<string?> arrayRecord = (ArrayRecord<string?>)serializationRecord[nameof(CustomTypeWithStringArrayField.Texts)]!;
 
-        Assert.Equal(input.Texts, arrayRecord.Deserialize());
+        Assert.Equal(input.Texts, arrayRecord.ToArray());
     }
 
     [Theory]
@@ -187,7 +193,7 @@ public class ReadExactTypesTests : ReadTests
         ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithStringArrayField>(stream);
         ArrayRecord<string?> arrayRecord = (ArrayRecord<string?>)serializationRecord[nameof(CustomTypeWithStringArrayField.Texts)]!;
 
-        Assert.Equal(input.Texts, arrayRecord.Deserialize());
+        Assert.Equal(input.Texts, arrayRecord.ToArray());
     }
 
     [Fact]
@@ -316,7 +322,7 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithArrayOfComplexTypes>(stream);
 
-        object[] array = (object[])classRecord[nameof(CustomTypeWithArrayOfComplexTypes.Array)]!;
+        ClassRecord?[] array = ((ArrayRecord<ClassRecord>)classRecord[nameof(CustomTypeWithArrayOfComplexTypes.Array)]!).ToArray();
         Assert.Equal(nullCount, array.Length);
         Assert.All(array, Assert.Null);
     }
@@ -375,7 +381,7 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithArrayOfObjects>(stream);
         ArrayRecord<object?> arrayRecord = (ArrayRecord<object?>)classRecord[nameof(CustomTypeWithArrayOfObjects.Array)]!;
-        object?[] values = arrayRecord.Deserialize();
+        object?[] values = arrayRecord.ToArray();
 
         Assert.Equal(input.Array, values);
     }

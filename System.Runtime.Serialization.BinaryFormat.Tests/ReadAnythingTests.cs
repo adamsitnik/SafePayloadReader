@@ -29,7 +29,7 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             ClassRecord comparerRecord = (ClassRecord)dictionaryRecord[nameof(input.Comparer)]!;
             Assert.True(comparerRecord.IsSerializedInstanceOf(input.Comparer.GetType()));
 
-            ClassRecord[] keyValuePairs = (ClassRecord[])dictionaryRecord["KeyValuePairs"]!;
+            ClassRecord[] keyValuePairs = ((ArrayRecord<ClassRecord>)dictionaryRecord["KeyValuePairs"]!).ToArray()!;
             Assert.True(keyValuePairs[0].IsSerializedInstanceOf(typeof(KeyValuePair<string, object>)));
 
             ClassRecord exceptionPair = Find(keyValuePairs, "exception");
@@ -47,7 +47,7 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             ClassRecord genericValue = (ClassRecord)genericPair["value"]!;
             Assert.True(genericValue.IsSerializedInstanceOf(typeof(List<int>)));
             Assert.Equal(4, genericValue["_size"]);
-            Assert.Equal([1, 2, 3, 4], (int[])genericValue["_items"]!);
+            Assert.Equal([1, 2, 3, 4], ((ArrayRecord<int>)genericValue["_items"]!).ToArray()!);
 
             static ClassRecord Find(ClassRecord[] keyValuePairs, string key)
                 => keyValuePairs.Where(pair => (string)pair["key"]! == key).Single();

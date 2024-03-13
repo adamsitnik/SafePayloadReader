@@ -5,12 +5,10 @@ namespace System.Runtime.Serialization.BinaryFormat;
 
 internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
 {
-    private BinaryArrayRecord(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets)
+    private BinaryArrayRecord(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo)
         : base(arrayInfo)
     {
         MemberTypeInfo = memberTypeInfo;
-        Lengths = lengths;
-        Offsets = offsets;
         Values = new();
     }
 
@@ -18,25 +16,9 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
 
     private MemberTypeInfo MemberTypeInfo { get; }
 
-    private int[] Lengths { get; }
-
-    private int[] Offsets { get; }
-
     internal List<object> Values { get; }
 
-    public override bool IsSerializedInstanceOf(Type type)
-    {
-        if (!type.IsArray || type.GetArrayRank() == ArrayInfo.Rank)
-        {
-            return false;
-        }
-
-        // TODO: compare offsets (there seems to be no reflection API for that)
-        // TODO: compare the type
-        return true;
-    }
-
-    protected override T?[] Deserialize(bool allowNulls)
+    protected override T?[] ToArrayOfT(bool allowNulls)
     {
         T?[] values = new T?[Length];
 
@@ -57,7 +39,7 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
 
             if (!allowNulls)
             {
-                throw new SerializationException("The array contained null(s)");
+                ThrowHelper.ThrowArrayContainedNull();
             }
 
             int nullCount = ((NullsRecord)item).NullCount;
@@ -71,9 +53,7 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
         return values;
     }
 
-    internal override object GetValue() => Deserialize();
-
-    internal static SerializationRecord Parse(BinaryReader reader)
+    internal static ArrayRecord Parse(BinaryReader reader)
     {
         int objectId = reader.ReadInt32();
 
@@ -82,10 +62,10 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
         {
             throw new SerializationException($"Unknown binary array type: {typeByte}");
         }
-        BinaryArrayType arrayType = (BinaryArrayType)typeByte;
+        ArrayType arrayType = (ArrayType)typeByte;
         int rank = reader.ReadInt32();
 
-        bool isRectangular = arrayType is BinaryArrayType.Rectangular or BinaryArrayType.RectangularOffset;
+        bool isRectangular = arrayType is ArrayType.Rectangular or ArrayType.RectangularOffset;
 
         if (rank < 1 || rank > 32 
             || (rank != 1 && !isRectangular)
@@ -112,73 +92,59 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
         }
 
         int[] offsets = new int[rank]; // zero-init; adversary-controlled, but acceptable since upper limit of 32
-        if (arrayType is BinaryArrayType.SingleOffset or BinaryArrayType.JaggedOffset or BinaryArrayType.RectangularOffset)
+        bool hasCustomOffset = false;
+        if (arrayType is ArrayType.SingleOffset or ArrayType.JaggedOffset or ArrayType.RectangularOffset)
         {
             for (int i = 0; i < offsets.Length; i++)
             {
-                offsets[i] = reader.ReadInt32();
+                int offset = reader.ReadInt32();
 
-                long maxIndex = lengths[i] + offsets[i];
-                if (maxIndex > int.MaxValue)
+                if (offset < 0)
                 {
-                    throw new SerializationException("Invalid length and offset");
+                    throw new SerializationException("Invalid offset");
                 }
+                else if (offset > 0)
+                {
+                    hasCustomOffset = true;
+
+                    long maxIndex = lengths[i] + offset;
+                    if (maxIndex > int.MaxValue)
+                    {
+                        throw new SerializationException("Invalid length and offset");
+                    }
+                }
+
+                offsets[i] = offset;
             }   
         }
 
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1);
         ArrayInfo arrayInfo = new(objectId, (uint)totalElementCount, arrayType, rank);
 
-        if (arrayType is BinaryArrayType.Rectangular or BinaryArrayType.RectangularOffset)
+        if (isRectangular || hasCustomOffset)
         {
-            return RectangularArrayRecord.Create(arrayInfo, memberTypeInfo, lengths, offsets);
+            return RectangularOrCustomOffsetArrayRecord.Create(arrayInfo, memberTypeInfo, lengths, offsets);
         }
 
-        switch (memberTypeInfo.Infos[0].BinaryType)
+        bool isJagged = arrayType is ArrayType.Jagged or ArrayType.JaggedOffset;
+
+        return memberTypeInfo.Infos[0].BinaryType switch
         {
-            case BinaryType.Primitive:
-                return MapPrimitive((PrimitiveType)memberTypeInfo.Infos[0].AdditionalInfo!, arrayInfo, memberTypeInfo, lengths, offsets);
-            case BinaryType.String:
-                return new BinaryArrayRecord<string>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case BinaryType.Object:
-                return new BinaryArrayRecord<object>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case BinaryType.SystemClass:
-            case BinaryType.Class:
-                return new BinaryArrayRecord<ClassRecord>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case BinaryType.ObjectArray:
-                return new BinaryArrayRecord<ArraySingleObjectRecord>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case BinaryType.StringArray:
-                return new BinaryArrayRecord<ArraySingleStringRecord>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case BinaryType.PrimitiveArray:
-                return MapPrimitiveArray((PrimitiveType)memberTypeInfo.Infos[0].AdditionalInfo!, arrayInfo, memberTypeInfo, lengths, offsets);
-            default:
-                throw ThrowHelper.InvalidBinaryType(memberTypeInfo.Infos[0].BinaryType);
-        }
+            BinaryType.Primitive => MapPrimitive(arrayInfo, memberTypeInfo),
+            BinaryType.String => new BinaryArrayRecord<string>(arrayInfo, memberTypeInfo),
+            BinaryType.Object => new BinaryArrayRecord<object>(arrayInfo, memberTypeInfo),
+            BinaryType.SystemClass or BinaryType.Class when isJagged 
+                => new JaggedArrayRecord<ClassRecord>(arrayInfo, memberTypeInfo),
+            BinaryType.SystemClass or BinaryType.Class when !isJagged
+                => new BinaryArrayRecord<ClassRecord>(arrayInfo, memberTypeInfo),
+            BinaryType.ObjectArray => new JaggedArrayRecord<object>(arrayInfo, memberTypeInfo),
+            BinaryType.StringArray => new JaggedArrayRecord<string> (arrayInfo, memberTypeInfo),
+            BinaryType.PrimitiveArray => MapPrimitiveArray(arrayInfo, memberTypeInfo),
+            _ => throw ThrowHelper.InvalidBinaryType(memberTypeInfo.Infos[0].BinaryType),
+        };
     }
 
-    internal override void HandleNextValue(object value, NextInfo info)
-        => HandleNext(value, info, size: 1);
-
-    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
-        => HandleNext(nextRecord, info, size: nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1);
-
-    private void HandleNext(object value, NextInfo info, int size)
-    {
-        ValuesToRead -= size;
-
-        if (ValuesToRead < 0)
-        {
-            // The only way to get here is to read a multiple null item with Count
-            // larger than the number of array items that were left to read.
-            ThrowHelper.ThrowUnexpectedNullRecordCount();
-        }
-        else if (ValuesToRead > 0)
-        {
-            info.Stack.Push(info);
-        }
-
-        Values.Add(value);
-    }
+    private protected override void AddValue(object value) => Values.Add(value);
 
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
     {
@@ -193,83 +159,48 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
         return (allowed, primitiveType);
     }
 
-    private static SerializationRecord MapPrimitive(PrimitiveType primitiveType,
-        ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets)
-    {
-        switch (primitiveType)
-        {
-            case PrimitiveType.Boolean:
-                return new BinaryArrayRecord<bool>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Byte:
-                return new BinaryArrayRecord<byte>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Char:
-                return new BinaryArrayRecord<char>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Decimal:
-                return new BinaryArrayRecord<decimal>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Double:
-                return new BinaryArrayRecord<double>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Int16:
-                return new BinaryArrayRecord<short>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Int32:
-                return new BinaryArrayRecord<int>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Int64:
-                return new BinaryArrayRecord<long>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.SByte:
-                return new BinaryArrayRecord<sbyte>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Single:
-                return new BinaryArrayRecord<float>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.TimeSpan:
-                return new BinaryArrayRecord<TimeSpan>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.DateTime:
-                return new BinaryArrayRecord<DateTime>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.UInt16:
-                return new BinaryArrayRecord<ushort>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.UInt32:
-                return new BinaryArrayRecord<uint>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.UInt64:
-                return new BinaryArrayRecord<ulong>(arrayInfo, memberTypeInfo, lengths, offsets);
-            default:
-                throw ThrowHelper.InvalidPrimitiveType(primitiveType);
-        }
-    }
+    private protected override bool IsElementType(Type typeElement)
+        => MemberTypeInfo.IsElementType(typeElement);
 
-    private static SerializationRecord MapPrimitiveArray(PrimitiveType primitiveType,
-        ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets)
-    {
-        switch (primitiveType)
+    private static ArrayRecord MapPrimitive(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo)
+        => (PrimitiveType)memberTypeInfo.Infos[0].AdditionalInfo! switch
         {
-            case PrimitiveType.Boolean:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<bool>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Byte:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<byte>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Char:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<char>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Decimal:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<decimal>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Double:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<double>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Int16:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<short>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Int32:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<int>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Int64:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<long>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.SByte:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<sbyte>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.Single:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<float>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.TimeSpan:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<TimeSpan>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.DateTime:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<DateTime>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.UInt16:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<ushort>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.UInt32:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<uint>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            case PrimitiveType.UInt64:
-                return new BinaryArrayRecord<ArraySinglePrimitiveRecord<ulong>>(arrayInfo, memberTypeInfo, lengths, offsets);
-            default:
-                throw ThrowHelper.InvalidPrimitiveType(primitiveType);
-        }
-    }
+            PrimitiveType.Boolean => new BinaryArrayRecord<bool>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Byte => new BinaryArrayRecord<byte>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Char => new BinaryArrayRecord<char>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Decimal => new BinaryArrayRecord<decimal>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Double => new BinaryArrayRecord<double>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Int16 => new BinaryArrayRecord<short>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Int32 => new BinaryArrayRecord<int>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Int64 => new BinaryArrayRecord<long>(arrayInfo, memberTypeInfo),
+            PrimitiveType.SByte => new BinaryArrayRecord<sbyte>(arrayInfo, memberTypeInfo),
+            PrimitiveType.Single => new BinaryArrayRecord<float>(arrayInfo, memberTypeInfo  ),
+            PrimitiveType.TimeSpan => new BinaryArrayRecord<TimeSpan>(arrayInfo, memberTypeInfo),
+            PrimitiveType.DateTime => new BinaryArrayRecord<DateTime>(arrayInfo, memberTypeInfo),
+            PrimitiveType.UInt16 => new BinaryArrayRecord<ushort>(arrayInfo, memberTypeInfo),
+            PrimitiveType.UInt32 => new BinaryArrayRecord<uint>(arrayInfo, memberTypeInfo),
+            PrimitiveType.UInt64 => new BinaryArrayRecord<ulong>(arrayInfo, memberTypeInfo),
+            _ => throw ThrowHelper.InvalidPrimitiveType((PrimitiveType)memberTypeInfo.Infos[0].AdditionalInfo!),
+        };
+
+    private static ArrayRecord MapPrimitiveArray(ArrayInfo arrayInfo, MemberTypeInfo typeInfo) 
+        => (PrimitiveType)typeInfo.Infos[0].AdditionalInfo! switch
+        {
+            PrimitiveType.Boolean => new JaggedArrayRecord<bool>(arrayInfo, typeInfo),
+            PrimitiveType.Byte => new JaggedArrayRecord<byte>(arrayInfo, typeInfo),
+            PrimitiveType.Char => new JaggedArrayRecord<char>(arrayInfo, typeInfo),
+            PrimitiveType.Decimal => new JaggedArrayRecord<decimal>(arrayInfo, typeInfo),
+            PrimitiveType.Double => new JaggedArrayRecord<double>(arrayInfo, typeInfo),
+            PrimitiveType.Int16 => new JaggedArrayRecord<short>(arrayInfo, typeInfo),
+            PrimitiveType.Int32 => new JaggedArrayRecord<int>(arrayInfo, typeInfo),
+            PrimitiveType.Int64 => new JaggedArrayRecord<long>(arrayInfo, typeInfo),
+            PrimitiveType.SByte => new JaggedArrayRecord<sbyte>(arrayInfo, typeInfo),
+            PrimitiveType.Single => new JaggedArrayRecord<float>(arrayInfo, typeInfo),
+            PrimitiveType.TimeSpan => new JaggedArrayRecord<TimeSpan>(arrayInfo, typeInfo),
+            PrimitiveType.DateTime => new JaggedArrayRecord<DateTime>(arrayInfo, typeInfo),
+            PrimitiveType.UInt16 => new JaggedArrayRecord<ushort>(arrayInfo, typeInfo),
+            PrimitiveType.UInt32 => new JaggedArrayRecord<uint>(arrayInfo, typeInfo),
+            PrimitiveType.UInt64 => new JaggedArrayRecord<ulong>(arrayInfo, typeInfo),
+            _ => throw ThrowHelper.InvalidPrimitiveType((PrimitiveType)typeInfo.Infos[0].AdditionalInfo!),
+        };
 }

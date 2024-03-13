@@ -101,4 +101,24 @@ internal readonly struct MemberTypeInfo
             _ => throw new SerializationException($"Invalid binary type: {binaryType}.")
         };
     }
+
+    internal bool IsElementType(Type typeElement)
+    {
+        (BinaryType BinaryType, object? AdditionalInfo) = Infos[0];
+
+        if (BinaryType is BinaryType.SystemClass)
+        {
+            string fullTypeName = (string)AdditionalInfo!;
+            // TODO: take type forwards into account
+            return typeElement.Assembly == typeof(object).Assembly && typeElement.FullName == fullTypeName;
+        }
+        else if (BinaryType is BinaryType.Class)
+        {
+            ClassTypeInfo typeInfo = (ClassTypeInfo)AdditionalInfo!;
+            // TODO: compare library as well
+            return typeInfo.TypeName == typeElement.FullName;
+        }
+
+        throw new InvalidOperationException();
+    }
 }

@@ -17,6 +17,23 @@ public abstract class ReadTests
         return ms;
     }
 
+    /// <summary>
+    /// Useful for very large inputs
+    /// </summary>
+    protected static FileStream SerializeToFile<T>(T instance) where T : notnull
+    {
+        string path = Path.GetTempFileName();
+        FileStream fs = new(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, 
+            FileShare.None, bufferSize: 100_000, FileOptions.DeleteOnClose);
+#pragma warning disable SYSLIB0011 // Type or member is obsolete
+        BinaryFormatter binaryFormatter = new();
+#pragma warning restore SYSLIB0011 // Type or member is obsolete
+        binaryFormatter.Serialize(fs, instance);
+        fs.Flush();
+        fs.Position = 0;
+        return fs;
+    }
+
     protected static void WriteSerializedStreamHeader(BinaryWriter writer, int major = 1, int minor = 0)
     {
         writer.Write((byte)RecordType.SerializedStreamHeader);

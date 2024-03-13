@@ -88,7 +88,7 @@ public static class SafePayloadReader
         ThrowForUnsupportedPrimitiveType<T>();
 
         var result = (ArrayRecord<T>)Read(stream, leaveOpen);
-        return result.Deserialize();
+        return result.ToArray();
     }
 
     private static void ThrowForUnsupportedPrimitiveType<T>() where T : unmanaged
@@ -111,19 +111,19 @@ public static class SafePayloadReader
     public static string?[] ReadArrayOfStrings(Stream stream, bool leaveOpen = false, bool allowNulls = true)
     {
         var result = (ArrayRecord<string>)Read(stream, leaveOpen);
-        return result.Deserialize(allowNulls);
+        return result.ToArray(allowNulls);
     }
 
     public static object?[] ReadArrayOfObjects(Stream stream, bool leaveOpen = false, bool allowNulls = true)
     {
         var result = (ArrayRecord<object>)Read(stream, leaveOpen);
-        return result.Deserialize(allowNulls);
+        return result.ToArray(allowNulls);
     }
 
     public static ClassRecord?[] ReadArrayOfClassRecords(Stream stream, bool leaveOpen = false, bool allowNulls = true)
     {
         var result = (ArrayRecord<ClassRecord>)Read(stream, leaveOpen);
-        return result.Deserialize(allowNulls);
+        return result.ToArray(allowNulls);
     }
 
     /// <summary>

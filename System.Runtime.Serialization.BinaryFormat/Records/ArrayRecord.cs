@@ -13,11 +13,87 @@ public abstract class ArrayRecord : SerializationRecord
     /// </summary>
     public uint Length => ArrayInfo.Length;
 
+    /// <summary>
+    /// Rank of the array.
+    /// </summary>
+    public int Rank => ArrayInfo.Rank;
+
+    /// <summary>
+    /// Type of the array.
+    /// </summary>
+    public ArrayType ArrayType => ArrayInfo.ArrayType;
+
+    /// <summary>
+    /// Type of the array element.
+    /// </summary>
+    public abstract Type ElementType { get; }
+
     internal override int ObjectId => ArrayInfo.ObjectId;
+
+    internal long ValuesToRead { get; private protected set; }
 
     private protected ArrayInfo ArrayInfo { get; }
 
-    internal long ValuesToRead { get; private protected set; }
+    public Array ToArray(Type expectedArrayType, bool allowNulls = true, int maxLength = 64_000)
+    {
+        if (!IsSerializedInstanceOf(expectedArrayType))
+        {
+            throw new InvalidOperationException();
+        }
+
+        return Deserialize(allowNulls, maxLength);
+    }
+
+    private protected abstract Array Deserialize(bool allowNulls, int maxLength);
+
+    public override bool IsSerializedInstanceOf(Type type)
+    {
+        if (!type.IsArray || type.GetArrayRank() != ArrayInfo.Rank)
+        {
+            return false;
+        }
+
+        Type typeElement = type.GetElementType()!;
+        while (typeElement.IsArray)
+        {
+            typeElement = typeElement.GetElementType()!;
+        }
+
+        if (typeElement == ElementType)
+        {
+            return true;
+        }
+
+        return ElementType == typeof(ClassRecord) && IsElementType(typeElement);
+    }
+
+    internal sealed override void HandleNextValue(object value, NextInfo info)
+        => HandleNext(value, info, size: 1);
+
+    internal sealed override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
+        => HandleNext(nextRecord, info, size: nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1);
+
+    private protected abstract void AddValue(object value);
+
+    private protected virtual bool IsElementType(Type typeElement) => false;
+
+    private void HandleNext(object value, NextInfo info, int size)
+    {
+        ValuesToRead -= size;
+
+        if (ValuesToRead < 0)
+        {
+            // The only way to get here is to read a multiple null item with Count
+            // larger than the number of array items that were left to read.
+            ThrowHelper.ThrowUnexpectedNullRecordCount();
+        }
+        else if (ValuesToRead > 0)
+        {
+            info.Stack.Push(info);
+        }
+
+        AddValue(value);
+    }
 
     internal abstract (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType();
 }
@@ -27,6 +103,8 @@ public abstract class ArrayRecord<T> : ArrayRecord
     private protected ArrayRecord(ArrayInfo arrayInfo) : base(arrayInfo)
     {
     }
+
+    public sealed override Type ElementType => typeof(T);
 
     /// <summary>
     /// Allocates an array of <typeparamref name="T"/> and fills it with the data provided in the serialized records (in case of primitive types like <see cref="string"/> or <see cref="int"/>) or the serialized records themselves.
@@ -43,15 +121,20 @@ public abstract class ArrayRecord<T> : ArrayRecord
     /// A new array is allocated every time this method is called.
     /// </para>
     /// </remarks>
-    public T?[] Deserialize(bool allowNulls = true, int maxLength = 64_000)
+    public T?[] ToArray(bool allowNulls = true, int maxLength = 64_000)
     {
         if (Length > maxLength)
         {
             ThrowHelper.ThrowMaxArrayLength(maxLength, Length);
         }
 
-        return Deserialize(allowNulls);
+        return ToArrayOfT(allowNulls);
     }
 
-    protected abstract T?[] Deserialize(bool allowNulls);
+    // PERF: if allocating new arrays is not acceptable, then we could introduce CopyTo method
+
+    private protected override Array Deserialize(bool allowNulls, int maxLength)
+        => ToArray(allowNulls, maxLength);
+
+    protected abstract T?[] ToArrayOfT(bool allowNulls);
 }

@@ -10,7 +10,7 @@
 ///   </see>
 ///  </para>
 /// </remarks>
-internal enum BinaryArrayType : byte
+public enum ArrayType : byte
 {
     /// <summary>
     ///  A single-dimensional array.

@@ -4,10 +4,10 @@ using System.Runtime.InteropServices;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
-public sealed class RectangularArrayRecord : ArrayRecord
+internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
 {
-    private RectangularArrayRecord(Type elementType, ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo,
-        int[] lengths, int[] offsets) : base(arrayInfo)
+    private RectangularOrCustomOffsetArrayRecord(Type elementType, ArrayInfo arrayInfo,
+        MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets) : base(arrayInfo)
     {
         ElementType = elementType;
         MemberTypeInfo = memberTypeInfo;
@@ -18,7 +18,7 @@ public sealed class RectangularArrayRecord : ArrayRecord
 
     public override RecordType RecordType => RecordType.BinaryArray;
 
-    private Type ElementType { get; }
+    public override Type ElementType { get; }
 
     private MemberTypeInfo MemberTypeInfo { get; }
 
@@ -30,37 +30,10 @@ public sealed class RectangularArrayRecord : ArrayRecord
     // that is why we use Linked instead of regular List here.
     internal LinkedList<object> Values { get; }
 
-    public override bool IsSerializedInstanceOf(Type type)
-    {
-        if (!type.IsArray || type.GetArrayRank() != ArrayInfo.Rank)
-        {
-            return false;
-        }
+    private protected override bool IsElementType(Type typeElement)
+        => MemberTypeInfo.IsElementType(typeElement);
 
-        Type typeElement = type.GetElementType()!;
-        while (typeElement.IsArray)
-        {
-            typeElement = typeElement.GetElementType()!;
-        }
-
-        // TODO: handle case when ElementType is typeof(ClassRecord))
-        if (typeElement != ElementType)
-        {
-            return false;
-        }
-
-        if (ArrayInfo.ArrayType == BinaryArrayType.Rectangular)
-        {
-            return true;
-        }
-
-        // TODO: find a cheaper way to compare offsets (there seems to be no reflection API for that)
-        // We don't use actual lengths, as it could allocate a lot of memory and be used as a vector of attack.
-        int[] lengths = new int[Lengths.Length];
-        return Array.CreateInstance(ElementType, lengths, Offsets).GetType() == type;
-    }
-
-    public Array Deserialize(bool allowNulls = true, int maxLength = 64_000)
+    private protected override Array Deserialize(bool allowNulls, int maxLength)
     {
         if (Length > maxLength)
         {
@@ -107,29 +80,7 @@ public sealed class RectangularArrayRecord : ArrayRecord
         return result;
     }
 
-    internal override void HandleNextValue(object value, NextInfo info)
-        => HandleNext(value, info, size: 1);
-
-    internal override void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)
-        => HandleNext(nextRecord, info, size: nextRecord is NullsRecord nullsRecord ? nullsRecord.NullCount : 1);
-
-    private void HandleNext(object value, NextInfo info, int size)
-    {
-        ValuesToRead -= size;
-
-        if (ValuesToRead < 0)
-        {
-            // The only way to get here is to read a multiple null item with Count
-            // larger than the number of array items that were left to read.
-            ThrowHelper.ThrowUnexpectedNullRecordCount();
-        }
-        else if (ValuesToRead > 0)
-        {
-            info.Stack.Push(info);
-        }
-
-        Values.AddLast(value);
-    }
+    private protected override void AddValue(object value) => Values.AddLast(value);
 
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
     {
@@ -144,7 +95,7 @@ public sealed class RectangularArrayRecord : ArrayRecord
         return (allowed, primitiveType);
     }
 
-    internal static RectangularArrayRecord Create(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets)
+    internal static RectangularOrCustomOffsetArrayRecord Create(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets)
     {
         return memberTypeInfo.Infos[0].BinaryType switch
         {
