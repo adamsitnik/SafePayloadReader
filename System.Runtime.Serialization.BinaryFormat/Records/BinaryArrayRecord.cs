@@ -31,6 +31,13 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
                 item = referenceRecord.GetReferencedRecord();
             }
 
+            // // IntPtr[] and UIntPtr[] are not represented as arrays of primitives, but as arrays of System Classes
+            if ((typeof(T) == typeof(IntPtr) || typeof(T) == typeof(UIntPtr))
+                && item is SystemClassWithMembersAndTypesRecord systemRecord)
+            {
+                item = systemRecord.GetValue<T>()!;
+            }
+
             if (item is T value)
             {
                 values[valueIndex++] = value;
@@ -133,6 +140,11 @@ internal sealed class BinaryArrayRecord<T> : ArrayRecord<T>
             BinaryType.Primitive => MapPrimitive(arrayInfo, memberTypeInfo),
             BinaryType.String => new BinaryArrayRecord<string>(arrayInfo, memberTypeInfo),
             BinaryType.Object => new BinaryArrayRecord<object>(arrayInfo, memberTypeInfo),
+            // IntPtr[] and UIntPtr[] are not represented as arrays of primitives, but as arrays of System Classes
+            BinaryType.SystemClass when !isJagged && memberTypeInfo.IsElementType(typeof(IntPtr))
+                => new BinaryArrayRecord<IntPtr>(arrayInfo, memberTypeInfo),
+            BinaryType.SystemClass when !isJagged && memberTypeInfo.IsElementType(typeof(UIntPtr))
+                => new BinaryArrayRecord<UIntPtr>(arrayInfo, memberTypeInfo),
             BinaryType.SystemClass or BinaryType.Class when isJagged 
                 => new JaggedArrayRecord<ClassRecord>(arrayInfo, memberTypeInfo),
             BinaryType.SystemClass or BinaryType.Class when !isJagged

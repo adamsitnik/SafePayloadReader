@@ -1,5 +1,4 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using Xunit;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests;
@@ -7,7 +6,7 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests;
 public class JaggedArraysTests : ReadTests
 {
     [Fact]
-    public void CanReadJaggedArraysOfPrimitiveTypes()
+    public void CanReadJaggedArraysOfPrimitiveTypes_2D()
     {
         int[][] input = new int[7][];
         for (int i = 0; i < input.Length; i++)
@@ -19,6 +18,23 @@ public class JaggedArraysTests : ReadTests
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(input, arrayRecord.ToArray());
+        Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
+    }
+
+    [Fact]
+    public void CanReadJaggedArraysOfPrimitiveTypes_3D()
+    {
+        int[][][] input = new int[7][][];
+        for (int i = 0; i < input.Length; i++)
+        {
+            input[i] = new int[1][];
+            input[i][0] = [i, i, i];
+        }
+
+        var arrayRecord = (JaggedArrayRecord<int>)SafePayloadReader.Read(Serialize(input));
+
+        Assert.Equal((uint)input.Length, arrayRecord.Length);
+        //Assert.Equal(input, arrayRecord.ToArray());
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
 
@@ -72,12 +88,15 @@ public class JaggedArraysTests : ReadTests
         var arrayRecord = (JaggedArrayRecord<ClassRecord>)SafePayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
-        var output = arrayRecord.ToArray();
+        ClassRecord?[][] genericOutput = arrayRecord.ToArray();
+        Array nonGenericOutput = arrayRecord.ToArray(input.GetType());
         for (int i = 0; i < input.Length; i++)
         {
             for (int j = 0; j < input[i].Length; j++)
             {
-                Assert.Equal(input[i][j].SomeField, output[i][j][nameof(ComplexType.SomeField)]);
+                int expected = input[i][j].SomeField;
+                Assert.Equal(expected, genericOutput[i][j]![nameof(ComplexType.SomeField)]);
+                Assert.Equal(expected, ((ClassRecord)nonGenericOutput.GetValue(i, j)!)[nameof(ComplexType.SomeField)]);
             }
         }
     }

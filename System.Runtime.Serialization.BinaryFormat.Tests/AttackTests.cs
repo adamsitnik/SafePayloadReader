@@ -111,6 +111,11 @@ public class AttackTests : ReadTests
         Assert.Same(classRecord, arrayRecord.ToArray().Single());
     }
 
+#if !NETFRAMEWORK
+    // GC.GetAllocatedBytesForCurrentThread() is not available on Full Framework.
+    // AppDomain.CurrentDomain.MonitoringTotalAllocatedMemorySize is available,
+    // but it reports allocations for all threads. Using this API would require
+    // ensuring that it's the only test that is being run at a time.
     [Fact]
     public void ArraysOfStringsAreNotBeingPreAllocated()
     {
@@ -146,6 +151,7 @@ public class AttackTests : ReadTests
             return GC.GetAllocatedBytesForCurrentThread();
         }
     }
+#endif
 
     [Fact]
     public void UnboundedRecursion_NestedTypes_ActualBinaryFormatterInput()

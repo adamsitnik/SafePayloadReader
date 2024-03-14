@@ -45,37 +45,9 @@ public static class SafePayloadReader
         {
             throw new SerializationException();
         }
-        else if (typeof(T) == typeof(DateTime))
+        else if (SystemClassWithMembersAndTypesRecord.CanBeMappedToPrimitive<T>())
         {
-            long raw = (long)result.MemberValues[0]!;
-            return (T)(object)BinaryReaderExtensions.CreateDateTimeFromData(raw);
-        }
-        else if (typeof(T) == typeof(TimeSpan))
-        {
-            long raw = (long)result.MemberValues[0]!;
-            return (T)(object)new TimeSpan(raw);
-        }
-        else if (typeof(T) == typeof(decimal))
-        {
-            int[] bits =
-            [
-                (int)result["lo"]!,
-                (int)result["mid"]!,
-                (int)result["hi"]!,
-                (int)result["flags"]!
-            ];
-
-            return (T)(object)new decimal(bits);
-        }
-        else if (typeof (T) == typeof(IntPtr))
-        {
-            long raw = (long)result.MemberValues[0]!;
-            return (T)(object)new IntPtr(raw);
-        }
-        else if (typeof(T) == typeof(UIntPtr))
-        {
-            ulong raw = (ulong)result.MemberValues[0]!;
-            return (T)(object)new UIntPtr(raw);
+            return result.GetValue<T>();
         }
 
         return (T)result.MemberValues[0]!;

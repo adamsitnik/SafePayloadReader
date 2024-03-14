@@ -220,6 +220,7 @@ public class ReadExactTypesTests : ReadTests
         Assert.Equal(input, output);
     }
 
+#if !NETFRAMEWORK // Half was introduced in 5.0
     [Fact]
     public void ReadArrayOfPrimitiveType_Throws_NotSupportedException_ForPrimitivesThatAreNotSerializable()
     {
@@ -229,6 +230,7 @@ public class ReadExactTypesTests : ReadTests
         // we throw a different exception than BinaryFormatter
         Assert.Throws<NotSupportedException>(() => SafePayloadReader.ReadArrayOfPrimitiveType<Half>(Stream.Null));
     }
+#endif
 
     [Fact]
     public void CanRead_ComplexSystemType()
@@ -409,8 +411,10 @@ public class ReadExactTypesTests : ReadTests
         Verify(ushort.MaxValue);
         Verify(int.MaxValue);
         Verify(uint.MaxValue);
+#if !NETFRAMEWORK
         Verify(nint.MaxValue);
         Verify(nuint.MaxValue);
+#endif
         Verify(long.MaxValue);
         Verify(ulong.MaxValue);
         Verify(float.MaxValue);

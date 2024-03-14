@@ -54,11 +54,6 @@ public abstract class ArrayRecord : SerializationRecord
         }
 
         Type typeElement = type.GetElementType()!;
-        while (typeElement.IsArray)
-        {
-            typeElement = typeElement.GetElementType()!;
-        }
-
         if (typeElement == ElementType)
         {
             return true;

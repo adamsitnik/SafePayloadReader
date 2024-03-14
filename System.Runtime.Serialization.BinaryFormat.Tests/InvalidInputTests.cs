@@ -18,7 +18,12 @@ public class InvalidInputTests : ReadTests
 
         writer.Write((byte)RecordType.BinaryObjectString);
         writer.Write((int)1); // object ID
+#if NETFRAMEWORK
+        typeof(BinaryWriter).GetMethod("Write7BitEncodedInt",
+            Reflection.BindingFlags.Instance | Reflection.BindingFlags.NonPublic).Invoke(writer, [invalidUtf8.Length]);
+#else
         writer.Write7BitEncodedInt(invalidUtf8.Length);
+#endif
         writer.Write(invalidUtf8);
         writer.Write((byte)RecordType.MessageEnd);
 
