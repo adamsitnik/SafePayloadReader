@@ -15,7 +15,6 @@ public static class SafePayloadReader
     }
 
     public static ClassRecord ReadClassRecord<T>(Stream stream, bool leaveOpen = false)
-        where T : class
     {
         if (typeof(T) == typeof(string))
         {
@@ -101,16 +100,16 @@ public static class SafePayloadReader
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="stream"></param>
+    /// <param name="payload"></param>
     /// <param name="leaveOpen"></param>
     /// <returns>Top level object.</returns>
-    /// <exception cref="ArgumentNullException">When <paramref name="stream"/> is null.</exception>
-    /// <exception cref="DecoderFallbackException">When reading input from <paramref name="stream"/> encounters invalid sequence of UTF8 characters.</exception>
-    public static SerializationRecord Read(Stream stream, bool leaveOpen = false)
+    /// <exception cref="ArgumentNullException">When <paramref name="payload"/> is null.</exception>
+    /// <exception cref="DecoderFallbackException">When reading input from <paramref name="payload"/> encounters invalid sequence of UTF8 characters.</exception>
+    public static SerializationRecord Read(Stream payload, bool leaveOpen = false)
     {
-        if (stream is null) throw new ArgumentNullException(nameof(stream));
+        if (payload is null) throw new ArgumentNullException(nameof(payload));
 
-        using BinaryReader reader = new(stream, ThrowOnInvalidUtf8Encoding, leaveOpen: leaveOpen);
+        using BinaryReader reader = new(payload, ThrowOnInvalidUtf8Encoding, leaveOpen: leaveOpen);
         return Read(reader);
     }
 

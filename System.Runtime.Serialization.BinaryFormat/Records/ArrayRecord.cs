@@ -44,7 +44,7 @@ public abstract class ArrayRecord : SerializationRecord
     public override bool IsSerializedInstanceOf(Type type)
         => type.IsArray 
         && type.GetArrayRank() == ArrayInfo.Rank
-        && IsElementType(type.GetElementType());
+        && IsElementType(type.GetElementType()!);
 
     internal sealed override void HandleNextValue(object value, NextInfo info)
         => HandleNext(value, info, size: 1);
