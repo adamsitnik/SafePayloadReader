@@ -175,7 +175,7 @@ public static class SafePayloadReader
             RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader),
             RecordType.ArraySinglePrimitive => ArraySinglePrimitiveRecord<int>.Parse(reader),
             RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader),
-            RecordType.BinaryArray => BinaryArrayRecord<ClassRecord>.Parse(reader),
+            RecordType.BinaryArray => BinaryArrayRecord.Parse(reader, recordMap),
             RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
             RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
             RecordType.ClassWithId => ClassWithIdRecord.Parse(reader, recordMap),

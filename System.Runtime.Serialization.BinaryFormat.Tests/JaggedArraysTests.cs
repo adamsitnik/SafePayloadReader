@@ -14,10 +14,10 @@ public class JaggedArraysTests : ReadTests
             input[i] = [i, i, i];
         }
 
-        var arrayRecord = (JaggedArrayRecord<int>)SafePayloadReader.Read(Serialize(input));
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
-        Assert.Equal(input, arrayRecord.ToArray());
+        Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
 
@@ -31,10 +31,10 @@ public class JaggedArraysTests : ReadTests
             input[i][0] = [i, i, i];
         }
 
-        var arrayRecord = (JaggedArrayRecord<int>)SafePayloadReader.Read(Serialize(input));
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
-        //Assert.Equal(input, arrayRecord.ToArray());
+        Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
 
@@ -47,10 +47,10 @@ public class JaggedArraysTests : ReadTests
             input[i] = ["a", "b", "c"];
         }
 
-        var arrayRecord = (JaggedArrayRecord<string>)SafePayloadReader.Read(Serialize(input));
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
-        Assert.Equal(input, arrayRecord.ToArray());
+        Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
 
@@ -63,10 +63,10 @@ public class JaggedArraysTests : ReadTests
             input[i] = ["a", 1, DateTime.MaxValue];
         }
 
-        var arrayRecord = (JaggedArrayRecord<object>)SafePayloadReader.Read(Serialize(input));
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
-        Assert.Equal(input, arrayRecord.ToArray());
+        Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
 
@@ -85,18 +85,16 @@ public class JaggedArraysTests : ReadTests
             input[i] = Enumerable.Range(0, i + 1).Select(j => new ComplexType { SomeField = j }).ToArray();
         }
 
-        var arrayRecord = (JaggedArrayRecord<ClassRecord>)SafePayloadReader.Read(Serialize(input));
+        var arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
-        ClassRecord?[][] genericOutput = arrayRecord.ToArray();
-        Array nonGenericOutput = arrayRecord.ToArray(input.GetType());
+        Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
+        var output = (ClassRecord?[][])arrayRecord.ToArray(input.GetType());
         for (int i = 0; i < input.Length; i++)
         {
             for (int j = 0; j < input[i].Length; j++)
             {
-                int expected = input[i][j].SomeField;
-                Assert.Equal(expected, genericOutput[i][j]![nameof(ComplexType.SomeField)]);
-                Assert.Equal(expected, ((ClassRecord)nonGenericOutput.GetValue(i, j)!)[nameof(ComplexType.SomeField)]);
+                Assert.Equal(input[i][j].SomeField, output[i][j]![nameof(ComplexType.SomeField)]);
             }
         }
     }

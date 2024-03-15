@@ -23,6 +23,8 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(string[]);
 
+    private protected override bool IsElementType(Type typeElement) => typeElement == typeof(string);
+
     internal static ArraySingleStringRecord Parse(BinaryReader reader)
         => new(ArrayInfo.Parse(reader));
 

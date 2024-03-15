@@ -30,6 +30,8 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
 
+    private protected override bool IsElementType(Type typeElement) => typeElement == typeof(T);
+
     protected override T[] ToArrayOfT(bool allowNulls) => Values.ToArray();
 
     internal static ArrayRecord Parse(BinaryReader reader)

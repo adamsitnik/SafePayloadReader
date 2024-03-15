@@ -4,8 +4,6 @@ using Xunit;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests;
 
-// TODO: add test cases for generic types, for both system and non-system
-// This should exercise type forwards code path.
 public class TypeMatchTests : ReadTests
 {
     private readonly static HashSet<Type> PrimitiveTypes = new()
@@ -19,7 +17,12 @@ public class TypeMatchTests : ReadTests
 
     [Serializable]
     public class NonSystemClass
-    { 
+    {
+    }
+
+    [Serializable]
+    public class GenericNonSystemClass<T>
+    {
     }
 
     [Fact]
@@ -44,6 +47,8 @@ public class TypeMatchTests : ReadTests
         Verify(decimal.MaxValue);
         Verify(TimeSpan.MaxValue);
         Verify(DateTime.Now);
+        Verify("string");
+        Verify(new object());
     }
 
     [Fact]
@@ -59,6 +64,22 @@ public class TypeMatchTests : ReadTests
     }
 
     [Fact]
+    public void CanRecognizeGenericSystemTypes()
+    {
+        Verify(new List<bool>());
+        Verify(new List<List<int>>());
+        Verify(new Dictionary<string, bool>());
+        Verify(new Dictionary<string, List<ValueTuple<int, short>>>());
+    }
+
+    [Fact]
+    public void CanRecognizeGenericNonSystemTypes()
+    {
+        Verify(new GenericNonSystemClass<NonSystemClass>());
+        Verify(new GenericNonSystemClass<GenericNonSystemClass<NonSystemClass>>());
+    }
+
+    [Fact]
     public void CanRecognizeSZArraysOfAllSupportedPrimitiveTypes()
     {
         VerifySZArray(true);
@@ -69,10 +90,6 @@ public class TypeMatchTests : ReadTests
         VerifySZArray(ushort.MaxValue);
         VerifySZArray(int.MaxValue);
         VerifySZArray(uint.MaxValue);
-#if !NETFRAMEWORK
-        VerifySZArray(nint.MaxValue);
-        VerifySZArray(nuint.MaxValue);
-#endif
         VerifySZArray(long.MaxValue);
         VerifySZArray(ulong.MaxValue);
         VerifySZArray(float.MaxValue);
@@ -92,6 +109,22 @@ public class TypeMatchTests : ReadTests
     public void CanRecognizeSZArraysOfNonSystemTypes()
     {
         VerifySZArray(new NonSystemClass());
+    }
+
+    [Fact]
+    public void CanRecognizeSZArraysOfGenericSystemTypes()
+    {
+        VerifySZArray(new List<bool>());
+        VerifySZArray(new List<List<int>>());
+        VerifySZArray(new Dictionary<string, bool>());
+        VerifySZArray(new Dictionary<string, List<ValueTuple<int, short>>>());
+    }
+
+    [Fact]
+    public void CanRecognizeSZArraysOfGenericNonSystemTypes()
+    {
+        VerifySZArray(new GenericNonSystemClass<NonSystemClass>());
+        VerifySZArray(new GenericNonSystemClass<GenericNonSystemClass<NonSystemClass>>());
     }
 
     [Fact]
@@ -131,6 +164,22 @@ public class TypeMatchTests : ReadTests
     }
 
     [Fact]
+    public void CanRecognizeJaggedArraysOfGenericSystemTypes()
+    {
+        VerifyJaggedArray(new List<bool>());
+        VerifyJaggedArray(new List<List<int>>());
+        VerifyJaggedArray(new Dictionary<string, bool>());
+        VerifyJaggedArray(new Dictionary<string, List<ValueTuple<int, short>>>());
+    }
+
+    [Fact]
+    public void CanRecognizeJaggedArraysOfGenericNonSystemTypes()
+    {
+        VerifyJaggedArray(new GenericNonSystemClass<NonSystemClass>());
+        VerifyJaggedArray(new GenericNonSystemClass<GenericNonSystemClass<NonSystemClass>>());
+    }
+
+    [Fact]
     public void CanRecognizeRectangular2DArraysOfAllSupportedPrimitiveTypes()
     {
         VerifyRectangularArray_2D(true);
@@ -167,6 +216,22 @@ public class TypeMatchTests : ReadTests
     }
 
     [Fact]
+    public void CanRecognizeRectangular2DArraysOfGenericSystemTypes()
+    {
+        VerifyRectangularArray_2D(new List<bool>());
+        VerifyRectangularArray_2D(new List<List<int>>());
+        VerifyRectangularArray_2D(new Dictionary<string, bool>());
+        VerifyRectangularArray_2D(new Dictionary<string, List<ValueTuple<int, short>>>());
+    }
+
+    [Fact]
+    public void CanRecognizeRectangular2DArraysOfGenericNonSystemTypes()
+    {
+        VerifyRectangularArray_2D(new GenericNonSystemClass<NonSystemClass>());
+        VerifyRectangularArray_2D(new GenericNonSystemClass<GenericNonSystemClass<NonSystemClass>>());
+    }
+
+    [Fact]
     public void CanRecognizeRectangular5DArraysOfAllSupportedPrimitiveTypes()
     {
         VerifyRectangularArray_5D(true);
@@ -200,6 +265,22 @@ public class TypeMatchTests : ReadTests
     public void CanRecognizeRectangular5DArraysOfNonSystemTypes()
     {
         VerifyRectangularArray_5D(new NonSystemClass());
+    }
+
+    [Fact]
+    public void CanRecognizeRectangular5DArraysOfGenericSystemTypes()
+    {
+        VerifyRectangularArray_5D(new List<bool>());
+        VerifyRectangularArray_5D(new List<List<int>>());
+        VerifyRectangularArray_5D(new Dictionary<string, bool>());
+        VerifyRectangularArray_5D(new Dictionary<string, List<ValueTuple<int, short>>>());
+    }
+
+    [Fact]
+    public void CanRecognizeRectangular5DArraysOfGenericNonSystemTypes()
+    {
+        VerifyRectangularArray_5D(new GenericNonSystemClass<NonSystemClass>());
+        VerifyRectangularArray_5D(new GenericNonSystemClass<GenericNonSystemClass<NonSystemClass>>());
     }
 
     [Theory]
@@ -250,9 +331,35 @@ public class TypeMatchTests : ReadTests
         VerifyCustomOffsetArray(new NonSystemClass(), arrayRank);
     }
 
+    [Theory]
+    // [InlineData(1)] // ArrayType.SingleOffset bug in BinaryFormatter!!
+    [InlineData(2)] // ArrayType.JaggedOffset
+    [InlineData(3)] // ArrayType.RectangularOffset
+    [InlineData(32)] // max rank
+    public void CanRecognizeArraysOfGenericSystemTypesWithCustomOffsets(int arrayRank)
+    {
+        VerifyCustomOffsetArray(new List<bool>(), arrayRank);
+        VerifyCustomOffsetArray(new List<List<int>>(), arrayRank);
+        VerifyCustomOffsetArray(new Dictionary<string, bool>(), arrayRank);
+        VerifyCustomOffsetArray(new Dictionary<string, List<ValueTuple<int, short>>>(), arrayRank);
+    }
+
+    [Theory]
+    // [InlineData(1)] // ArrayType.SingleOffset bug in BinaryFormatter!!
+    [InlineData(2)] // ArrayType.JaggedOffset
+    [InlineData(3)] // ArrayType.RectangularOffset
+    [InlineData(32)] // max rank
+    public void CanRecognizeArraysOfGenericNonSystemTypesWithCustomOffsets(int arrayRank)
+    {
+        VerifyCustomOffsetArray(new GenericNonSystemClass<NonSystemClass>(), arrayRank);
+        VerifyCustomOffsetArray(new GenericNonSystemClass<GenericNonSystemClass<NonSystemClass>>(), arrayRank);
+    }
+
     private static void Verify<T>(T input) where T : notnull
     {
         SerializationRecord one = SafePayloadReader.Read(Serialize(input));
+
+        Assert.True(one.IsSerializedInstanceOf(typeof(T)));
 
         foreach (Type type in PrimitiveTypes)
         {
@@ -292,26 +399,16 @@ public class TypeMatchTests : ReadTests
     {
         T[][] jaggedArray = [[input]];
 
-        SerializationRecord arrayRecord = SafePayloadReader.Read(Serialize(jaggedArray));
+        ArrayRecord arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(jaggedArray));
 
-        Assert.True(arrayRecord is ArrayRecord);
-
-        if (PrimitiveTypes.Contains(typeof(T)))
-        {
-            Assert.True(arrayRecord is JaggedArrayRecord<T>, userMessage: typeof(T).Name);
-        }
-        else
-        {
-            Assert.True(arrayRecord is JaggedArrayRecord<ClassRecord>, userMessage: typeof(T).Name);
-            Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(T[])));
-            Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(T[][])));
-            Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(T[][][])));
-        }
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(T[])));
+        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(T[][])));
+        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(T[][][])));
 
         foreach (Type type in PrimitiveTypes)
         {
             Assert.False(arrayRecord.IsSerializedInstanceOf(type));
-            Assert.Equal(typeof(T) == type, arrayRecord.IsSerializedInstanceOf(type.MakeArrayType()));
+            Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType()));
             Assert.Equal(typeof(T) == type, arrayRecord.IsSerializedInstanceOf(type.MakeArrayType().MakeArrayType()));
             Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType().MakeArrayType().MakeArrayType()));
         }
@@ -336,11 +433,11 @@ public class TypeMatchTests : ReadTests
     private static void VerifyRectangularArray<T>(Array array)
     {
         int arrayRank = array.GetType().GetArrayRank();
-        SerializationRecord arrayRecord = SafePayloadReader.Read(Serialize(array));
+        ArrayRecord arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(array));
 
         Assert.True(arrayRecord is ArrayRecord);
         Assert.False(arrayRecord is ArrayRecord<T>, userMessage: typeof(T).Name);
-        Assert.False(arrayRecord is JaggedArrayRecord<T>, userMessage: typeof(T).Name);
+        Assert.True(arrayRecord.ArrayType is ArrayType.Rectangular);
 
         foreach (Type type in PrimitiveTypes.Concat([typeof(T)]))
         {
@@ -367,7 +464,6 @@ public class TypeMatchTests : ReadTests
 
         Assert.True(arrayRecord is ArrayRecord);
         Assert.False(arrayRecord is ArrayRecord<T>, userMessage: typeof(T).Name);
-        Assert.False(arrayRecord is JaggedArrayRecord<T>, userMessage: typeof(T).Name);
 
         foreach (Type type in PrimitiveTypes.Concat([typeof(T)]))
         {

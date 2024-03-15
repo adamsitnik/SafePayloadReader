@@ -23,11 +23,6 @@ public abstract class ArrayRecord : SerializationRecord
     /// </summary>
     public ArrayType ArrayType => ArrayInfo.ArrayType;
 
-    /// <summary>
-    /// Type of the array element.
-    /// </summary>
-    public abstract Type ElementType { get; }
-
     internal override int ObjectId => ArrayInfo.ObjectId;
 
     internal long ValuesToRead { get; private protected set; }
@@ -41,26 +36,15 @@ public abstract class ArrayRecord : SerializationRecord
             throw new InvalidOperationException();
         }
 
-        return Deserialize(allowNulls, maxLength);
+        return Deserialize(expectedArrayType, allowNulls, maxLength);
     }
 
-    private protected abstract Array Deserialize(bool allowNulls, int maxLength);
+    private protected abstract Array Deserialize(Type arrayType, bool allowNulls, int maxLength);
 
     public override bool IsSerializedInstanceOf(Type type)
-    {
-        if (!type.IsArray || type.GetArrayRank() != ArrayInfo.Rank)
-        {
-            return false;
-        }
-
-        Type typeElement = type.GetElementType()!;
-        if (typeElement == ElementType)
-        {
-            return true;
-        }
-
-        return ElementType == typeof(ClassRecord) && IsElementType(typeElement);
-    }
+        => type.IsArray 
+        && type.GetArrayRank() == ArrayInfo.Rank
+        && IsElementType(type.GetElementType());
 
     internal sealed override void HandleNextValue(object value, NextInfo info)
         => HandleNext(value, info, size: 1);
@@ -70,7 +54,7 @@ public abstract class ArrayRecord : SerializationRecord
 
     private protected abstract void AddValue(object value);
 
-    private protected virtual bool IsElementType(Type typeElement) => false;
+    private protected abstract bool IsElementType(Type typeElement);
 
     private void HandleNext(object value, NextInfo info, int size)
     {
@@ -99,8 +83,6 @@ public abstract class ArrayRecord<T> : ArrayRecord
     {
     }
 
-    public sealed override Type ElementType => typeof(T);
-
     /// <summary>
     /// Allocates an array of <typeparamref name="T"/> and fills it with the data provided in the serialized records (in case of primitive types like <see cref="string"/> or <see cref="int"/>) or the serialized records themselves.
     /// </summary>
@@ -128,7 +110,7 @@ public abstract class ArrayRecord<T> : ArrayRecord
 
     // PERF: if allocating new arrays is not acceptable, then we could introduce CopyTo method
 
-    private protected override Array Deserialize(bool allowNulls, int maxLength)
+    private protected override Array Deserialize(Type arrayType, bool allowNulls, int maxLength)
         => ToArray(allowNulls, maxLength);
 
     protected abstract T?[] ToArrayOfT(bool allowNulls);

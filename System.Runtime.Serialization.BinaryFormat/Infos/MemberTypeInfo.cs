@@ -102,23 +102,88 @@ internal readonly struct MemberTypeInfo
         };
     }
 
-    internal bool IsElementType(Type typeElement)
+    internal bool IsElementType(Type typeElement, RecordMap recordMap)
     {
-        (BinaryType BinaryType, object? AdditionalInfo) = Infos[0];
+        (BinaryType binaryType, object? additionalInfo) = Infos[0];
 
-        if (BinaryType is BinaryType.SystemClass)
+        switch (binaryType)
         {
-            string fullTypeName = (string)AdditionalInfo!;
-            // TODO: take type forwards into account
-            return typeElement.Assembly == typeof(object).Assembly && typeElement.FullName == fullTypeName;
+            case BinaryType.String:
+                return typeElement == typeof(string);
+            case BinaryType.StringArray:
+                return typeElement == typeof(string[]);
+            case BinaryType.Object:
+                return typeElement == typeof(object);
+            case BinaryType.ObjectArray:
+                return typeElement == typeof(object[]);
+            case BinaryType.Primitive:
+            case BinaryType.PrimitiveArray:
+                if (binaryType is BinaryType.PrimitiveArray)
+                {
+                    if (!typeElement.IsArray)
+                    {
+                        return false;
+                    }
+                    typeElement = typeElement.GetElementType()!;
+                }
+                return ((PrimitiveType)additionalInfo!) switch
+                {
+                    PrimitiveType.Boolean => typeElement == typeof(bool),
+                    PrimitiveType.Byte => typeElement == typeof(byte),
+                    PrimitiveType.Char => typeElement == typeof(char),
+                    PrimitiveType.Decimal => typeElement == typeof(decimal),
+                    PrimitiveType.Double => typeElement == typeof(double),
+                    PrimitiveType.Int16 => typeElement == typeof(short),
+                    PrimitiveType.Int32 => typeElement == typeof(int),
+                    PrimitiveType.Int64 => typeElement == typeof(long),
+                    PrimitiveType.SByte => typeElement == typeof(sbyte),
+                    PrimitiveType.Single => typeElement == typeof(float),
+                    PrimitiveType.TimeSpan => typeElement == typeof(TimeSpan),
+                    PrimitiveType.DateTime => typeElement == typeof(DateTime),
+                    PrimitiveType.UInt16 => typeElement == typeof(ushort),
+                    PrimitiveType.UInt32 => typeElement == typeof(uint),
+                    PrimitiveType.UInt64 => typeElement == typeof(ulong),
+                    _ => false
+                };
+            case BinaryType.SystemClass:
+                if (typeElement.Assembly != typeof(object).Assembly)
+                {
+                    return false;
+                }
+                string fullTypeName = (string)additionalInfo!;
+                string fullSystemClassName = FormatterServices.GetTypeFullNameIncludingTypeForwards(typeElement);
+                return fullTypeName == fullSystemClassName;
+            case BinaryType.Class:
+                ClassTypeInfo typeInfo = (ClassTypeInfo)additionalInfo!;
+                string fullClassName = FormatterServices.GetTypeFullNameIncludingTypeForwards(typeElement);
+                if (typeInfo.TypeName != fullClassName)
+                {
+                    return false;
+                }
+                BinaryLibraryRecord libraryRecord = (BinaryLibraryRecord)recordMap[typeInfo.LibraryId];
+                string assemblyName = FormatterServices.GetAssemblyNameIncludingTypeForwards(typeElement);
+                return assemblyName == libraryRecord.LibraryName;
+            default:
+                throw new NotSupportedException();
         }
-        else if (BinaryType is BinaryType.Class)
-        {
-            ClassTypeInfo typeInfo = (ClassTypeInfo)AdditionalInfo!;
-            // TODO: compare library as well
-            return typeInfo.TypeName == typeElement.FullName;
-        }
+    }
 
-        throw new InvalidOperationException();
+    internal bool ShouldBeRepresentedAsArrayOfClassRecords()
+    {
+        (BinaryType binaryType, object? additionalInfo) = Infos[0];
+
+        switch (binaryType)
+        {
+            case BinaryType.SystemClass:
+                string fullTypeName = (string)additionalInfo!;
+                // TODO: use TypeName here!
+                return !fullTypeName.EndsWith("[]", StringComparison.Ordinal);
+            case BinaryType.Class:
+                ClassTypeInfo typeInfo = (ClassTypeInfo)additionalInfo!;
+                // TODO: use TypeName here!
+                return !typeInfo.TypeName.EndsWith("[]", StringComparison.Ordinal);
+            default:
+                return false;
+        }
     }
 }

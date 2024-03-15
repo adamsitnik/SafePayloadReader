@@ -23,6 +23,8 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
     public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
 
+    private protected override bool IsElementType(Type typeElement) => typeElement == typeof(object);
+
     protected override object?[] ToArrayOfT(bool allowNulls)
     {
         object?[] values = new object?[Length];

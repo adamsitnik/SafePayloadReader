@@ -7,18 +7,19 @@ namespace System.Runtime.Serialization.BinaryFormat;
 internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
 {
     private RectangularOrCustomOffsetArrayRecord(Type elementType, ArrayInfo arrayInfo,
-        MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets) : base(arrayInfo)
+        MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets, RecordMap recordMap) : base(arrayInfo)
     {
         ElementType = elementType;
         MemberTypeInfo = memberTypeInfo;
         Lengths = lengths;
         Offsets = offsets;
+        RecordMap = recordMap;
         Values = new();
     }
 
     public override RecordType RecordType => RecordType.BinaryArray;
 
-    public override Type ElementType { get; }
+    private Type ElementType { get; }
 
     private MemberTypeInfo MemberTypeInfo { get; }
 
@@ -26,14 +27,17 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
 
     private int[] Offsets { get; }
 
+    private RecordMap RecordMap { get; }
+
     // This is the only array type that may have more elements than Array.MaxLength,
     // that is why we use Linked instead of regular List here.
-    internal LinkedList<object> Values { get; }
+    // TODO: verify my assumptions as I doubt them myself
+    private LinkedList<object> Values { get; }
 
     private protected override bool IsElementType(Type typeElement)
-        => MemberTypeInfo.IsElementType(typeElement);
+        => MemberTypeInfo.IsElementType(typeElement, RecordMap);
 
-    private protected override Array Deserialize(bool allowNulls, int maxLength)
+    private protected override Array Deserialize(Type arrayType, bool allowNulls, int maxLength)
     {
         if (Length > maxLength)
         {
@@ -95,14 +99,15 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
         return (allowed, primitiveType);
     }
 
-    internal static RectangularOrCustomOffsetArrayRecord Create(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets)
+    internal static RectangularOrCustomOffsetArrayRecord Create(ArrayInfo arrayInfo, 
+        MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets, RecordMap recordMap)
     {
         return memberTypeInfo.Infos[0].BinaryType switch
         {
-            BinaryType.Primitive => new(MapPrimitive((PrimitiveType)memberTypeInfo.Infos[0].AdditionalInfo!), arrayInfo, memberTypeInfo, lengths, offsets),
-            BinaryType.String => new(typeof(string), arrayInfo, memberTypeInfo, lengths, offsets),
-            BinaryType.Object => new(typeof(object), arrayInfo, memberTypeInfo, lengths, offsets),
-            BinaryType.SystemClass or BinaryType.Class => new(typeof(ClassRecord), arrayInfo, memberTypeInfo, lengths, offsets),
+            BinaryType.Primitive => new(MapPrimitive((PrimitiveType)memberTypeInfo.Infos[0].AdditionalInfo!), arrayInfo, memberTypeInfo, lengths, offsets, recordMap),
+            BinaryType.String => new(typeof(string), arrayInfo, memberTypeInfo, lengths, offsets, recordMap),
+            BinaryType.Object => new(typeof(object), arrayInfo, memberTypeInfo, lengths, offsets, recordMap),
+            BinaryType.SystemClass or BinaryType.Class => new(typeof(ClassRecord), arrayInfo, memberTypeInfo, lengths, offsets, recordMap),
             _ => throw ThrowHelper.InvalidBinaryType(memberTypeInfo.Infos[0].BinaryType),
         };
     }
