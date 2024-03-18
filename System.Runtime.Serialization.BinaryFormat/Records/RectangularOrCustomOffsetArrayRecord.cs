@@ -46,7 +46,34 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
 
         Array result = Array.CreateInstance(ElementType, Lengths, Offsets);
 
-#if NET6_0_OR_GREATER
+#if NETSTANDARD
+        int[] indices = new int[Offsets.Length];
+        Offsets.CopyTo(indices, 0); // respect custom offsets
+
+        foreach (object value in Values)
+        {
+            result.SetValue(GetActualValue(value), indices);
+
+            int dimension = indices.Length - 1;
+            while (dimension >= 0)
+            {
+                indices[dimension]++;
+                if (indices[dimension] < Offsets[dimension] + Lengths[dimension])
+                {
+                    break;
+                }
+                indices[dimension] = Offsets[dimension];
+                dimension--;
+            }
+
+            if (dimension < 0)
+            {
+                break;
+            }
+        }
+
+        return result;
+#else
         // I took this idea from Array.CoreCLR that maps an array of int indices into
         // an internal flat index.
         // Yes, I know I'll most likely burn in hell for doing that.
@@ -79,9 +106,22 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
                 flattenedIndex++;
             }
         }
-#endif
 
         return result;
+
+        static void CopyTo<T>(LinkedList<object> list, Array array) where T : unmanaged
+        {
+            ref byte arrayDataRef = ref MemoryMarshal.GetArrayDataReference(array);
+            ref T elementRef = ref Unsafe.As<byte, T>(ref arrayDataRef);
+            nuint flattenedIndex = 0;
+            foreach (object value in list)
+            {
+                ref T targetIndex = ref Unsafe.Add(ref elementRef, flattenedIndex);
+                targetIndex = (T)GetActualValue(value)!;
+                flattenedIndex++;
+            }
+        }
+#endif
     }
 
     private protected override void AddValue(object value) => Values.AddLast(value);
@@ -132,21 +172,6 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
             PrimitiveType.UInt64 => typeof(ulong),
             _ => throw ThrowHelper.InvalidPrimitiveType(primitiveType),
         };
-
-#if NET6_0_OR_GREATER
-    private static void CopyTo<T>(LinkedList<object> list, Array array) where T : unmanaged
-    {
-        ref byte arrayDataRef = ref MemoryMarshal.GetArrayDataReference(array);
-        ref T elementRef = ref Unsafe.As<byte, T>(ref arrayDataRef);
-        nuint flattenedIndex = 0;
-        foreach (object value in list)
-        {
-            ref T targetIndex = ref Unsafe.Add(ref elementRef, flattenedIndex);
-            targetIndex = (T)GetActualValue(value)!;
-            flattenedIndex++;
-        }
-    }
-#endif
 
     private static object? GetActualValue(object value)
         => value is SerializationRecord serializationRecord
