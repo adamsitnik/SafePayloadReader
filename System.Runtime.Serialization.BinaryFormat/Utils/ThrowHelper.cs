@@ -1,4 +1,6 @@
-﻿namespace System.Runtime.Serialization.BinaryFormat;
+﻿using System.IO;
+
+namespace System.Runtime.Serialization.BinaryFormat;
 
 internal static class ThrowHelper
 {
@@ -20,4 +22,7 @@ internal static class ThrowHelper
 
     internal static void ThrowTypeMismatch(Type expected)
         => throw new SerializationException($"The payload was expected to contain an instance of {expected}, while it contained TODO");
+
+    internal static void ThrowEndOfStreamException()
+        => throw new EndOfStreamException();
 }

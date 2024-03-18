@@ -141,15 +141,40 @@ public class AttackTests : ReadTests
 
         Assert.InRange(after, before, before + 1024);
         Assert.Equal(RecordType.ArraySingleString, serializationRecord.RecordType);
+    }
 
-        static long GetAllocatedByteCount()
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            GC.Collect();
+    [Fact]
+    public void ArraysOfBytesAreNotBeingPreAllocated()
+    {
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
 
-            return GC.GetAllocatedBytesForCurrentThread();
-        }
+        WriteSerializedStreamHeader(writer);
+
+        writer.Write((byte)RecordType.ArraySinglePrimitive);
+        writer.Write(1); // object ID
+        writer.Write(Array.MaxLength); // length
+        writer.Write((byte)2); // PrimitiveType.Byte
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+
+        long before = GetAllocatedByteCount();
+
+        Assert.Throws<EndOfStreamException>(() => PayloadReader.Read(stream));
+
+        long after = GetAllocatedByteCount();
+
+        Assert.InRange(after, before, before + 200_000);
+    }
+
+    private static long GetAllocatedByteCount()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+
+        return GC.GetAllocatedBytesForCurrentThread();
     }
 #endif
 

@@ -40,4 +40,23 @@ public class EdgeCaseTests : ReadTests
         Assert.Equal(input, ouput);
         Assert.Same(ouput[0], ouput[1]);
     }
+
+    [Theory]
+    [InlineData(100)]
+    [InlineData(64_001)]
+    [InlineData(127_000)]
+#if RELEASE // it takes a lot of time to execute (+- 4 minutes)
+    [InlineData(2147483591)] // Array.MaxLength
+#endif
+    public void CanReadArrayOfAnySize(int length)
+    {
+        byte[] input = new byte[length]; 
+        new Random().NextBytes(input);
+
+        // MemoryStream can not handle large array payloads as it's backed by an array.
+        using FileStream stream = SerializeToFile(input);
+
+        byte[] output = PayloadReader.ReadArrayOfPrimitiveType<byte>(stream, maxLength: length);
+        Assert.Equal(input, output);
+    }
 }

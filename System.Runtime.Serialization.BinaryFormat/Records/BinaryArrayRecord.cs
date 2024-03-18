@@ -193,13 +193,13 @@ internal sealed class BinaryArrayRecord : ArrayRecord
 
         while (elementType.IsArray)
         {
-            elementType = elementType.GetElementType();
+            elementType = elementType.GetElementType()!;
             arrayNestingDepth++;
         }
 
         if (PrimitiveTypes.Contains(elementType))
         {
-            return arrayNestingDepth == 1 ? elementType : arrayType.GetElementType();
+            return arrayNestingDepth == 1 ? elementType : arrayType.GetElementType()!;
         }
 
         // Complex types are never instantiated, but represented as ClassRecord

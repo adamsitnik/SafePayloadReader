@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Buffers;
+using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -71,12 +72,9 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
     private static IReadOnlyList<T> ReadPrimitiveTypes<T>(BinaryReader reader, int count)
         where T : unmanaged
     {
-        // Special casing byte for performance.
         if (typeof(T) == typeof(byte))
         {
-            // TODO: introduce max size limit
-            byte[] bytes = reader.ReadBytes(count);
-            return (T[])(object)bytes;
+            return (IReadOnlyList<T>)(object)ReadBytes(reader, count);
         }
 
         List<T> values = new();
@@ -145,5 +143,41 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
         }
 
         return values;
+    }
+
+    private static IReadOnlyList<byte> ReadBytes(BinaryReader reader, int count)
+    {
+        // Special casing byte for performance.
+        if (count <= DefaultMaxArrayLength)
+        {
+            return reader.ReadBytes(count);
+        }
+
+        // But only to certain degree, as the input is untrusted.
+        List<byte> result = new(DefaultMaxArrayLength);
+        byte[] bytes = ArrayPool<byte>.Shared.Rent(DefaultMaxArrayLength);
+
+        while (count > 0)
+        {
+            int bytesRead = reader.Read(bytes, 0, Math.Min(count, bytes.Length));
+
+            if (bytesRead <= 0)
+            {
+                ThrowHelper.ThrowEndOfStreamException();
+            }
+            else if (bytesRead == bytes.Length)
+            {
+                result.AddRange(bytes);
+            }
+            else
+            {
+                result.AddRange(new ArraySegment<byte>(bytes, 0, bytesRead));
+            }
+
+            count -= bytesRead;
+        }
+
+        ArrayPool<byte>.Shared.Return(bytes);
+        return result;
     }
 }

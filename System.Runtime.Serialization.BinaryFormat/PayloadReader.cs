@@ -99,70 +99,77 @@ public static class PayloadReader
     /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain a single dimension array of primitive values of <typeparamref name="T"/> type.
     /// </summary>
+    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
     /// <returns>The deserialized array of <typeparamref name="T"/>.</returns>
     /// <exception cref="NotSupportedException">For <seealso cref="System.Half"/> and other primitive types that are not natively supported by the Binary Formatter itself.</exception>
     /// <inheritdoc cref="Read"/>
-    public static T[] ReadArrayOfPrimitiveType<T>(Stream payload, bool leaveOpen = false)
+    public static T[] ReadArrayOfPrimitiveType<T>(Stream payload, bool leaveOpen = false, int maxLength = ArrayRecord.DefaultMaxArrayLength)
         where T : unmanaged
     {
         ThrowForUnsupportedPrimitiveType<T>();
 
         var result = (ArrayRecord<T>)Read(payload, leaveOpen);
-        return result.ToArray();
+        return result.ToArray(allowNulls: false, maxLength);
     }
 
     /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain a single dimension array of <seealso cref="string"/>.
     /// </summary>
     /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
+    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
     /// <returns>The deserialized array of <seealso cref="string"/>.</returns>
     /// <inheritdoc cref="Read"/>
-    public static string?[] ReadArrayOfStrings(Stream payload, bool leaveOpen = false, bool allowNulls = true)
+    public static string?[] ReadArrayOfStrings(Stream payload, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
     {
         var result = (ArrayRecord<string>)Read(payload, leaveOpen);
-        return result.ToArray(allowNulls);
+        return result.ToArray(allowNulls, maxLength);
     }
 
     /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain a single dimension array of <seealso cref="object"/>.
     /// </summary>
     /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
+    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
     /// <returns>The deserialized array of <seealso cref="object"/>.</returns>
     /// <remarks>
     /// <para>Only primitive types and nulls are deserialized to their raw values.</para>
     /// <para>For other types that are not arrays, elements are represented as <seealso cref="ClassRecord"/> instances.</para>
     /// <para>For jagged and multi-dimensional arrays, elements are represented as instances of <seealso cref="ArrayRecord"/>.</para></remarks>
     /// <inheritdoc cref="Read"/>
-    public static object?[] ReadArrayOfObjects(Stream payload, bool leaveOpen = false, bool allowNulls = true)
+    public static object?[] ReadArrayOfObjects(Stream payload, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
     {
         var result = (ArrayRecord<object>)Read(payload, leaveOpen);
-        return result.ToArray(allowNulls);
+        return result.ToArray(allowNulls, maxLength);
     }
 
     /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain a single dimension array of any class (or struct) instances.
     /// </summary>
+    /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
+    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
     /// <returns>An array of <seealso cref="ClassRecord"/> instances.</returns>
     /// <inheritdoc cref="Read"/>
-    public static ClassRecord?[] ReadArrayOfAnyClassRecords(Stream stream, bool leaveOpen = false, bool allowNulls = true)
+    public static ClassRecord?[] ReadArrayOfAnyClassRecords(Stream stream, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
     {
         var result = (ArrayRecord<ClassRecord>)Read(stream, leaveOpen);
-        return result.ToArray(allowNulls);
+        return result.ToArray(allowNulls, maxLength);
     }
 
     /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain a single dimension array of <typeparamref name="T"/> class (or struct) instances.
     /// </summary>
+    /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
+    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
     /// <returns>An array of <seealso cref="ClassRecord"/> instances.</returns>
     /// <inheritdoc cref="Read"/>
-    public static ClassRecord?[] ReadArrayOfExactClassRecords<T>(Stream stream, bool leaveOpen = false, bool allowNulls = true)
+    public static ClassRecord?[] ReadArrayOfExactClassRecords<T>(Stream stream, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
     {
         var result = (ArrayRecord<ClassRecord>)Read(stream, leaveOpen);
         if (!result.IsElementType(typeof(T)))
         {
             ThrowHelper.ThrowTypeMismatch(expected: typeof(T[]));
         }
-        return result.ToArray(allowNulls);
+        return result.ToArray(allowNulls, maxLength);
     }
 
     private static SerializationRecord Read(BinaryReader reader)

@@ -2,6 +2,8 @@
 
 public abstract class ArrayRecord : SerializationRecord
 {
+    internal const int DefaultMaxArrayLength = 64_000;
+
     private protected ArrayRecord(ArrayInfo arrayInfo)
     {
         ArrayInfo = arrayInfo;
@@ -29,7 +31,7 @@ public abstract class ArrayRecord : SerializationRecord
 
     private protected ArrayInfo ArrayInfo { get; }
 
-    public Array ToArray(Type expectedArrayType, bool allowNulls = true, int maxLength = 64_000)
+    public Array ToArray(Type expectedArrayType, bool allowNulls = true, int maxLength = DefaultMaxArrayLength)
     {
         if (!IsTypeNameMatching(expectedArrayType))
         {
@@ -98,7 +100,7 @@ public abstract class ArrayRecord<T> : ArrayRecord
     /// A new array is allocated every time this method is called.
     /// </para>
     /// </remarks>
-    public T?[] ToArray(bool allowNulls = true, int maxLength = 64_000)
+    public T?[] ToArray(bool allowNulls = true, int maxLength = DefaultMaxArrayLength)
     {
         if (Length > maxLength)
         {
