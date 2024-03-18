@@ -28,7 +28,7 @@ public class InvalidInputTests : ReadTests
         writer.Write((byte)RecordType.MessageEnd);
 
         stream.Position = 0;
-        Assert.Throws<DecoderFallbackException>(() => SafePayloadReader.Read(stream));
+        Assert.Throws<DecoderFallbackException>(() => PayloadReader.Read(stream));
     }
 
     [Theory]
@@ -42,7 +42,7 @@ public class InvalidInputTests : ReadTests
         WriteSerializedStreamHeader(writer, major, minor);
 
         stream.Position = 0;
-        Assert.Throws<SerializationException>(() => SafePayloadReader.Read(stream));
+        Assert.Throws<SerializationException>(() => PayloadReader.Read(stream));
     }
 
     [Theory]
@@ -65,7 +65,7 @@ public class InvalidInputTests : ReadTests
         writer.Write((byte)RecordType.MessageEnd);
 
         stream.Position = 0;
-        Assert.Throws<SerializationException>(() => SafePayloadReader.Read(stream));
+        Assert.Throws<SerializationException>(() => PayloadReader.Read(stream));
     }
 
     [Fact]
@@ -87,6 +87,6 @@ public class InvalidInputTests : ReadTests
         writer.Write((byte)RecordType.MessageEnd);
 
         stream.Position = 0;
-        Assert.Throws<SerializationException>(() => SafePayloadReader.ReadArrayOfStrings(stream));
+        Assert.Throws<SerializationException>(() => PayloadReader.ReadArrayOfStrings(stream));
     }
 }

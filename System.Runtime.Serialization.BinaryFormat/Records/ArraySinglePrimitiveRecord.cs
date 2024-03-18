@@ -28,9 +28,9 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     internal IReadOnlyList<T> Values { get; }
 
-    public override bool IsSerializedInstanceOf(Type type) => typeof(T[]) == type;
+    public override bool IsTypeNameMatching(Type type) => typeof(T[]) == type;
 
-    private protected override bool IsElementType(Type typeElement) => typeElement == typeof(T);
+    internal override bool IsElementType(Type typeElement) => typeElement == typeof(T);
 
     protected override T[] ToArrayOfT(bool allowNulls) => Values.ToArray();
 
@@ -74,6 +74,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
         // Special casing byte for performance.
         if (typeof(T) == typeof(byte))
         {
+            // TODO: introduce max size limit
             byte[] bytes = reader.ReadBytes(count);
             return (T[])(object)bytes;
         }

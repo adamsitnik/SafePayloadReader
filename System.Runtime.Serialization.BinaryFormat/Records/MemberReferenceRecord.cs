@@ -30,7 +30,7 @@ internal sealed class MemberReferenceRecord : SerializationRecord
 
     internal override object? GetValue() => GetReferencedRecord().GetValue();
 
-    public override bool IsSerializedInstanceOf(Type type) => RecordMap[Reference].IsSerializedInstanceOf(type);
+    public override bool IsTypeNameMatching(Type type) => RecordMap[Reference].IsTypeNameMatching(type);
 
     internal static MemberReferenceRecord Parse(BinaryReader reader, RecordMap recordMap)
         => new(reader.ReadInt32(), recordMap);

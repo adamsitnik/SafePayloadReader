@@ -31,7 +31,7 @@ public abstract class ArrayRecord : SerializationRecord
 
     public Array ToArray(Type expectedArrayType, bool allowNulls = true, int maxLength = 64_000)
     {
-        if (!IsSerializedInstanceOf(expectedArrayType))
+        if (!IsTypeNameMatching(expectedArrayType))
         {
             throw new InvalidOperationException();
         }
@@ -41,7 +41,7 @@ public abstract class ArrayRecord : SerializationRecord
 
     private protected abstract Array Deserialize(Type arrayType, bool allowNulls, int maxLength);
 
-    public override bool IsSerializedInstanceOf(Type type)
+    public override bool IsTypeNameMatching(Type type)
         => type.IsArray 
         && type.GetArrayRank() == ArrayInfo.Rank
         && IsElementType(type.GetElementType()!);
@@ -54,7 +54,7 @@ public abstract class ArrayRecord : SerializationRecord
 
     private protected abstract void AddValue(object value);
 
-    private protected abstract bool IsElementType(Type typeElement);
+    internal abstract bool IsElementType(Type typeElement);
 
     private void HandleNext(object value, NextInfo info, int size)
     {

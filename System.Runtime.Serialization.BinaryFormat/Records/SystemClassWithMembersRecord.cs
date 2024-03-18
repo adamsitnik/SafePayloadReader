@@ -23,7 +23,7 @@ internal sealed class SystemClassWithMembersRecord : ClassRecord
 
     internal override int ExpectedValuesCount => ClassInfo.MemberNames.Count;
 
-    public override bool IsSerializedInstanceOf(Type type)
+    public override bool IsTypeNameMatching(Type type)
         => type.Assembly == typeof(object).Assembly
         && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
 

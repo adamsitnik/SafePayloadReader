@@ -28,7 +28,7 @@ internal sealed class MemberPrimitiveTypedRecord : SerializationRecord
 
     internal override object? GetValue() => Value;
 
-    public override bool IsSerializedInstanceOf(Type type)
+    public override bool IsTypeNameMatching(Type type)
     {
         if (type is null) throw new ArgumentNullException(nameof(type));
 

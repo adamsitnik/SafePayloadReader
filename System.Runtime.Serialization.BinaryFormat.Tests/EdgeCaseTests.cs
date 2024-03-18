@@ -18,10 +18,10 @@ public class EdgeCaseTests : ReadTests
         using MemoryStream stream = Serialize(typeof(object));
 #endif
 
-        ClassRecord classRecord = (ClassRecord)SafePayloadReader.Read(stream);
+        ClassRecord classRecord = (ClassRecord)PayloadReader.Read(stream);
 
         // It's a surrogate, so there is no type match.
-        Assert.False(classRecord.IsSerializedInstanceOf(typeof(Type)));
+        Assert.False(classRecord.IsTypeNameMatching(typeof(Type)));
         Assert.Equal("System.UnitySerializationHolder", classRecord.TypeName);
         Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord["AssemblyName"]);
     }
@@ -35,7 +35,7 @@ public class EdgeCaseTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        string?[] ouput = SafePayloadReader.ReadArrayOfStrings(stream);
+        string?[] ouput = PayloadReader.ReadArrayOfStrings(stream);
 
         Assert.Equal(input, ouput);
         Assert.Same(ouput[0], ouput[1]);

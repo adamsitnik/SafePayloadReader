@@ -15,9 +15,22 @@ public abstract class SerializationRecord
 
     internal virtual int ObjectId => NoId;
 
-    // TODO: find a better name
-    public virtual bool IsSerializedInstanceOf(Type type) => false;
+    /// <summary>
+    /// Compares the type and assembly name read from the payload against the specified type.
+    /// </summary>
+    /// <remarks>
+    /// <para>It takes type forwarding into account.</para>
+    /// <para>It does NOT take into account member names and their types.</para>
+    /// </remarks>
+    /// <param name="type">The <seealso cref="Type"/> to compare against.</param>
+    /// <returns>True if the serialized type and assembly name match provided type.</returns>
+    public virtual bool IsTypeNameMatching(Type type) => false;
 
+    /// <summary>
+    /// Gets the primitive, string or null record value.
+    /// For reference records, it returns the referenced record.
+    /// For other records, it returns the records themselves.
+    /// </summary>
     internal virtual object? GetValue() => this;
 
     internal virtual void HandleNextRecord(SerializationRecord nextRecord, NextInfo info)

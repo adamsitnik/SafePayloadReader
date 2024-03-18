@@ -25,7 +25,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<WithCyclicReference>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<WithCyclicReference>(stream);
 
         Assert.Same(classRecord, classRecord[nameof(WithCyclicReference.ReferenceToSelf)]);
         Assert.Equal(input.Name, classRecord[nameof(WithCyclicReference.Name)]);
@@ -43,7 +43,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<Exception>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<Exception>(stream);
 
         Assert.Same(classRecord, classRecord[nameof(Exception.InnerException)]);
         Assert.Equal(input.Message, classRecord[nameof(Exception.Message)]);
@@ -58,7 +58,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        object?[] output = SafePayloadReader.ReadArrayOfObjects(stream);
+        object?[] output = PayloadReader.ReadArrayOfObjects(stream);
 
         Assert.Equal(input[0], output[0]);
         Assert.Same(input, input[1]);
@@ -81,7 +81,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<WithCyclicReferenceInArrayOfObjects>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<WithCyclicReferenceInArrayOfObjects>(stream);
 
         Assert.Equal(input.Name, classRecord[nameof(WithCyclicReferenceInArrayOfObjects.Name)]);
         ArrayRecord<object?> array = (ArrayRecord<object?>)classRecord[nameof(WithCyclicReferenceInArrayOfObjects.ArrayWithReferenceToSelf)]!;
@@ -104,7 +104,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<WithCyclicReferenceInArrayOfT>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<WithCyclicReferenceInArrayOfT>(stream);
 
         Assert.Equal(input.Name, classRecord[nameof(WithCyclicReferenceInArrayOfT.Name)]);
         var arrayRecord = (ArrayRecord<ClassRecord?>)classRecord[nameof(WithCyclicReferenceInArrayOfT.ArrayWithReferenceToSelf)]!;
@@ -135,7 +135,7 @@ public class AttackTests : ReadTests
 
         long before = GetAllocatedByteCount();
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        SerializationRecord serializationRecord = PayloadReader.Read(stream);
 
         long after = GetAllocatedByteCount();
 
@@ -171,7 +171,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(previous);
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        SerializationRecord serializationRecord = PayloadReader.Read(stream);
 
         static Exception CreateNewExceptionTypeAndInstantiateIt(Type[] ctorTypes, ConstructorInfo baseCtor, 
             ModuleBuilder module, Exception previous, int i)
@@ -254,6 +254,6 @@ public class AttackTests : ReadTests
 
         stream.Position = 0;
 
-        SerializationRecord serializationRecord = SafePayloadReader.Read(stream);
+        SerializationRecord serializationRecord = PayloadReader.Read(stream);
     }
 }

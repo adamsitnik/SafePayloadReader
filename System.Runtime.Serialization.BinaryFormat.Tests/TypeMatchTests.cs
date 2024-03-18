@@ -357,13 +357,13 @@ public class TypeMatchTests : ReadTests
 
     private static void Verify<T>(T input) where T : notnull
     {
-        SerializationRecord one = SafePayloadReader.Read(Serialize(input));
+        SerializationRecord one = PayloadReader.Read(Serialize(input));
 
-        Assert.True(one.IsSerializedInstanceOf(typeof(T)));
+        Assert.True(one.IsTypeNameMatching(typeof(T)));
 
         foreach (Type type in PrimitiveTypes)
         {
-            Assert.Equal(typeof(T) == type, one.IsSerializedInstanceOf(type));
+            Assert.Equal(typeof(T) == type, one.IsTypeNameMatching(type));
         }
     }
 
@@ -371,7 +371,7 @@ public class TypeMatchTests : ReadTests
     {
         T[] array = [input];
 
-        ArrayRecord arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(array));
+        ArrayRecord arrayRecord = PayloadReader.ReadAnyArrayRecord(Serialize(array));
 
         if (PrimitiveTypes.Contains(typeof(T)))
         {
@@ -380,13 +380,13 @@ public class TypeMatchTests : ReadTests
         else
         {
             Assert.True(arrayRecord is ArrayRecord<ClassRecord>, userMessage: typeof(T).Name);
-            Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(T[])));
+            Assert.True(arrayRecord.IsTypeNameMatching(typeof(T[])));
         }
 
         foreach (Type type in PrimitiveTypes)
         {
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type));
-            Assert.Equal(typeof(T) == type, arrayRecord.IsSerializedInstanceOf(type.MakeArrayType()));
+            Assert.False(arrayRecord.IsTypeNameMatching(type));
+            Assert.Equal(typeof(T) == type, arrayRecord.IsTypeNameMatching(type.MakeArrayType()));
         }
 
         if (PrimitiveTypes.Contains(typeof(T)))
@@ -399,18 +399,18 @@ public class TypeMatchTests : ReadTests
     {
         T[][] jaggedArray = [[input]];
 
-        ArrayRecord arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(jaggedArray));
+        ArrayRecord arrayRecord = PayloadReader.ReadAnyArrayRecord(Serialize(jaggedArray));
 
-        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(T[])));
-        Assert.True(arrayRecord.IsSerializedInstanceOf(typeof(T[][])));
-        Assert.False(arrayRecord.IsSerializedInstanceOf(typeof(T[][][])));
+        Assert.False(arrayRecord.IsTypeNameMatching(typeof(T[])));
+        Assert.True(arrayRecord.IsTypeNameMatching(typeof(T[][])));
+        Assert.False(arrayRecord.IsTypeNameMatching(typeof(T[][][])));
 
         foreach (Type type in PrimitiveTypes)
         {
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type));
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType()));
-            Assert.Equal(typeof(T) == type, arrayRecord.IsSerializedInstanceOf(type.MakeArrayType().MakeArrayType()));
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType().MakeArrayType().MakeArrayType()));
+            Assert.False(arrayRecord.IsTypeNameMatching(type));
+            Assert.False(arrayRecord.IsTypeNameMatching(type.MakeArrayType()));
+            Assert.Equal(typeof(T) == type, arrayRecord.IsTypeNameMatching(type.MakeArrayType().MakeArrayType()));
+            Assert.False(arrayRecord.IsTypeNameMatching(type.MakeArrayType().MakeArrayType().MakeArrayType()));
         }
     }
 
@@ -433,18 +433,17 @@ public class TypeMatchTests : ReadTests
     private static void VerifyRectangularArray<T>(Array array)
     {
         int arrayRank = array.GetType().GetArrayRank();
-        ArrayRecord arrayRecord = (ArrayRecord)SafePayloadReader.Read(Serialize(array));
+        ArrayRecord arrayRecord = PayloadReader.ReadAnyArrayRecord(Serialize(array));
 
-        Assert.True(arrayRecord is ArrayRecord);
         Assert.False(arrayRecord is ArrayRecord<T>, userMessage: typeof(T).Name);
         Assert.True(arrayRecord.ArrayType is ArrayType.Rectangular);
 
         foreach (Type type in PrimitiveTypes.Concat([typeof(T)]))
         {
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type));
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType(arrayRank - 1)));
-            Assert.Equal(typeof(T) == type, arrayRecord.IsSerializedInstanceOf(type.MakeArrayType(arrayRank)));
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType(arrayRank + 1)));
+            Assert.False(arrayRecord.IsTypeNameMatching(type));
+            Assert.False(arrayRecord.IsTypeNameMatching(type.MakeArrayType(arrayRank - 1)));
+            Assert.Equal(typeof(T) == type, arrayRecord.IsTypeNameMatching(type.MakeArrayType(arrayRank)));
+            Assert.False(arrayRecord.IsTypeNameMatching(type.MakeArrayType(arrayRank + 1)));
         }
     }
 
@@ -460,22 +459,21 @@ public class TypeMatchTests : ReadTests
         }
         array.SetValue(input, offsets);
 
-        SerializationRecord arrayRecord = SafePayloadReader.Read(Serialize(array));
+        ArrayRecord arrayRecord = PayloadReader.ReadAnyArrayRecord(Serialize(array));
 
-        Assert.True(arrayRecord is ArrayRecord);
         Assert.False(arrayRecord is ArrayRecord<T>, userMessage: typeof(T).Name);
 
         foreach (Type type in PrimitiveTypes.Concat([typeof(T)]))
         {
-            Assert.False(arrayRecord.IsSerializedInstanceOf(type));
+            Assert.False(arrayRecord.IsTypeNameMatching(type));
             if (arrayRank > 1)
             {
-                Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType(arrayRank - 1)));
+                Assert.False(arrayRecord.IsTypeNameMatching(type.MakeArrayType(arrayRank - 1)));
             }
-            Assert.Equal(typeof(T) == type, arrayRecord.IsSerializedInstanceOf(type.MakeArrayType(arrayRank)));
+            Assert.Equal(typeof(T) == type, arrayRecord.IsTypeNameMatching(type.MakeArrayType(arrayRank)));
             if (arrayRank <= 31) // 32 is max
             {
-                Assert.False(arrayRecord.IsSerializedInstanceOf(type.MakeArrayType(arrayRank + 1)));
+                Assert.False(arrayRecord.IsTypeNameMatching(type.MakeArrayType(arrayRank + 1)));
             }
         }
     }

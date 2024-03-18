@@ -30,7 +30,7 @@ internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
 
     internal override int ExpectedValuesCount => MemberTypeInfo.Infos.Count;
 
-    public override bool IsSerializedInstanceOf(Type type)
+    public override bool IsTypeNameMatching(Type type)
         => FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name
         && FormatterServices.GetAssemblyNameIncludingTypeForwards(type) == Library.LibraryName;
 

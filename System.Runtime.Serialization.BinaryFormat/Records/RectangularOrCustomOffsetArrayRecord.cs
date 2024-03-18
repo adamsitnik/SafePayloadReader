@@ -34,7 +34,7 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
     // TODO: verify my assumptions as I doubt them myself
     private LinkedList<object> Values { get; }
 
-    private protected override bool IsElementType(Type typeElement)
+    internal override bool IsElementType(Type typeElement)
         => MemberTypeInfo.IsElementType(typeElement, RecordMap);
 
     private protected override Array Deserialize(Type arrayType, bool allowNulls, int maxLength)

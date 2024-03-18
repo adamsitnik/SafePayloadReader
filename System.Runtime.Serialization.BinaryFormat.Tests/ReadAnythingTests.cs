@@ -19,33 +19,33 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
 
             using MemoryStream stream = Serialize(input);
 
-            SerializationRecord topLevel = SafePayloadReader.Read(stream);
+            SerializationRecord topLevel = PayloadReader.Read(stream);
 
             Assert.IsAssignableFrom<ClassRecord>(topLevel);
             ClassRecord dictionaryRecord = (ClassRecord)topLevel;
             // this innocent line tests type forwards support ;)
-            Assert.True(dictionaryRecord.IsSerializedInstanceOf(typeof(Dictionary<string, object>)));
+            Assert.True(dictionaryRecord.IsTypeNameMatching(typeof(Dictionary<string, object>)));
 
             ClassRecord comparerRecord = (ClassRecord)dictionaryRecord[nameof(input.Comparer)]!;
-            Assert.True(comparerRecord.IsSerializedInstanceOf(input.Comparer.GetType()));
+            Assert.True(comparerRecord.IsTypeNameMatching(input.Comparer.GetType()));
 
             ClassRecord[] keyValuePairs = ((ArrayRecord<ClassRecord>)dictionaryRecord["KeyValuePairs"]!).ToArray()!;
-            Assert.True(keyValuePairs[0].IsSerializedInstanceOf(typeof(KeyValuePair<string, object>)));
+            Assert.True(keyValuePairs[0].IsTypeNameMatching(typeof(KeyValuePair<string, object>)));
 
             ClassRecord exceptionPair = Find(keyValuePairs, "exception");
             ClassRecord exceptionValue = (ClassRecord)exceptionPair["value"]!;
-            Assert.True(exceptionValue.IsSerializedInstanceOf(typeof(Exception)));
+            Assert.True(exceptionValue.IsTypeNameMatching(typeof(Exception)));
             Assert.Equal("test", exceptionValue[nameof(Exception.Message)]);
 
             ClassRecord structPair = Find(keyValuePairs, "struct");
             ClassRecord structValue = (ClassRecord)structPair["value"]!;
-            Assert.True(structValue.IsSerializedInstanceOf(typeof(ValueTuple<bool, int>)));
+            Assert.True(structValue.IsTypeNameMatching(typeof(ValueTuple<bool, int>)));
             Assert.Equal(true, structValue["Item1"]);
             Assert.Equal(123, structValue["Item2"]);
 
             ClassRecord genericPair = Find(keyValuePairs, "generic");
             ClassRecord genericValue = (ClassRecord)genericPair["value"]!;
-            Assert.True(genericValue.IsSerializedInstanceOf(typeof(List<int>)));
+            Assert.True(genericValue.IsTypeNameMatching(typeof(List<int>)));
             Assert.Equal(4, genericValue["_size"]);
             Assert.Equal([1, 2, 3, 4], ((ArrayRecord<int>)genericValue["_items"]!).ToArray()!);
 

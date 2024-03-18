@@ -36,7 +36,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithPrimitiveFields>(stream);
+        ClassRecord serializationRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithPrimitiveFields>(stream);
 
         Verify(input, serializationRecord);
     }
@@ -69,7 +69,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithStringField>(stream);
+        ClassRecord serializationRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithStringField>(stream);
 
         Assert.Equal(input.Text, serializationRecord[nameof(CustomTypeWithStringField.Text)]);
     }
@@ -97,7 +97,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithObjectField>(stream);
+        ClassRecord serializationRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithObjectField>(stream);
 
         Assert.Equal(input.SomeObject, serializationRecord[nameof(CustomTypeWithObjectField.SomeObject)]);
         Assert.Same(serializationRecord[nameof(CustomTypeWithObjectField.ActualObject)],
@@ -135,7 +135,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithPrimitiveArrayFields>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithPrimitiveArrayFields>(stream);
 
         Verify(input.Bytes, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.Bytes));
         Verify(input.SignedBytes, classRecord, nameof(CustomTypeWithPrimitiveArrayFields.SignedBytes));
@@ -172,7 +172,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithStringArrayField>(stream);
+        ClassRecord serializationRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithStringArrayField>(stream);
         ArrayRecord<string?> arrayRecord = (ArrayRecord<string?>)serializationRecord[nameof(CustomTypeWithStringArrayField.Texts)]!;
 
         Assert.Equal(input.Texts, arrayRecord.ToArray());
@@ -190,7 +190,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithStringArrayField>(stream);
+        ClassRecord serializationRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithStringArrayField>(stream);
         ArrayRecord<string?> arrayRecord = (ArrayRecord<string?>)serializationRecord[nameof(CustomTypeWithStringArrayField.Texts)]!;
 
         Assert.Equal(input.Texts, arrayRecord.ToArray());
@@ -203,7 +203,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        string?[] output = SafePayloadReader.ReadArrayOfStrings(stream);
+        string?[] output = PayloadReader.ReadArrayOfStrings(stream);
 
         Assert.Equal(input, output);
     }
@@ -215,7 +215,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ulong[] output = SafePayloadReader.ReadArrayOfPrimitiveType<ulong>(stream);
+        ulong[] output = PayloadReader.ReadArrayOfPrimitiveType<ulong>(stream);
 
         Assert.Equal(input, output);
     }
@@ -228,7 +228,7 @@ public class ReadExactTypesTests : ReadTests
 
         Assert.Throws<SerializationException>(() => Serialize(input));
         // we throw a different exception than BinaryFormatter
-        Assert.Throws<NotSupportedException>(() => SafePayloadReader.ReadArrayOfPrimitiveType<Half>(Stream.Null));
+        Assert.Throws<NotSupportedException>(() => PayloadReader.ReadArrayOfPrimitiveType<Half>(Stream.Null));
     }
 #endif
 
@@ -239,7 +239,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<Exception>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<Exception>(stream);
 
         Assert.Equal(input.Message, classRecord[nameof(Exception.Message)]);
     }
@@ -252,7 +252,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(outer);
 
-        ClassRecord outerRecord = SafePayloadReader.ReadClassRecord<Exception>(stream);
+        ClassRecord outerRecord = PayloadReader.ReadExactClassRecord<Exception>(stream);
 
         Assert.Equal(outer.Message, outerRecord[nameof(Exception.Message)]);
 
@@ -273,7 +273,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord?[] classRecords = SafePayloadReader.ReadArrayOfClassRecords(stream);
+        ClassRecord?[] classRecords = PayloadReader.ReadArrayOfExactClassRecords<CustomTypeWithPrimitiveFields>(stream);
 
         for (int i = 0; i < input.Length; i++)
         {
@@ -305,7 +305,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithArrayOfComplexTypes>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithArrayOfComplexTypes>(stream);
 
         object array = classRecord[nameof(CustomTypeWithArrayOfComplexTypes.Array)]!;
     }
@@ -322,7 +322,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithArrayOfComplexTypes>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithArrayOfComplexTypes>(stream);
 
         ClassRecord?[] array = ((ArrayRecord<ClassRecord>)classRecord[nameof(CustomTypeWithArrayOfComplexTypes.Array)]!).ToArray();
         Assert.Equal(nullCount, array.Length);
@@ -340,7 +340,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        object?[] output = SafePayloadReader.ReadArrayOfObjects(stream);
+        object?[] output = PayloadReader.ReadArrayOfObjects(stream);
 
         Assert.Equal(input, output);
     }
@@ -354,7 +354,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        object?[] output = SafePayloadReader.ReadArrayOfObjects(stream);
+        object?[] output = PayloadReader.ReadArrayOfObjects(stream);
 
         Assert.Equal(nullCount, output.Length);
         Assert.All(output, Assert.Null);
@@ -381,7 +381,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = SafePayloadReader.ReadClassRecord<CustomTypeWithArrayOfObjects>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithArrayOfObjects>(stream);
         ArrayRecord<object?> arrayRecord = (ArrayRecord<object?>)classRecord[nameof(CustomTypeWithArrayOfObjects.Array)]!;
         object?[] values = arrayRecord.ToArray();
 
@@ -395,7 +395,7 @@ public class ReadExactTypesTests : ReadTests
     {
         using MemoryStream stream = Serialize(input);
 
-        string output = SafePayloadReader.ReadString(stream);
+        string output = PayloadReader.ReadString(stream);
 
         Assert.Equal(input, output);
     }
@@ -427,9 +427,31 @@ public class ReadExactTypesTests : ReadTests
         {
             using MemoryStream stream = Serialize(input);
 
-            T output = SafePayloadReader.ReadPrimitiveType<T>(stream);
+            T output = PayloadReader.ReadPrimitiveType<T>(stream);
 
             Assert.Equal(input, output);
         }
+    }
+
+    [Serializable]
+    public struct SerializableStruct
+    {
+        public int Integer;
+        public string? Text;
+    }
+
+    [Fact]
+    public void CanReadStruct()
+    {
+        SerializableStruct input = new()
+        {
+            Integer = 1988,
+            Text = "StructsAreRepresentedWithClassRecords"
+        };
+
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<SerializableStruct>(Serialize(input));
+
+        Assert.Equal(input.Integer, classRecord[nameof(SerializableStruct.Integer)]);
+        Assert.Equal(input.Text, classRecord[nameof(SerializableStruct.Text)]);
     }
 }

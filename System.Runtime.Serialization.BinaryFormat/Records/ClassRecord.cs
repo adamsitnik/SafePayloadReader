@@ -36,13 +36,15 @@ public abstract class ClassRecord : SerializationRecord
     internal List<object?> MemberValues { get; }
 
     /// <summary>
-    /// Retrieves the value of provided field.
+    /// Retrieves the value of the provided <paramref name="memberName"/>.
     /// </summary>
     /// <param name="memberName">The name of the field.</param>
     /// <returns>
-    /// For primitive types like <seealso cref="int"/> and <seealso cref="string"/> returns their value,
-    /// for arrays of such types returns the arrays,
-    /// for other types returns <seealso cref="ClassRecord"/> or <seealso cref="ArrayRecord{T}"/>.
+    /// <para>For primitive types like <seealso cref="int"/>, <seealso cref="string"/> or <seealso cref="DateTime"/> returns their value.</para>
+    /// <para>For nulls, returns a null.</para>
+    /// <para>For other types that are not arrays, returns an instance of <seealso cref="ClassRecord"/>.</para>
+    /// <para>For single-dimensional arrays returns <seealso cref="ArrayRecord{T}"/> where the generic type is the primitive type or <seealso cref="ClassRecord"/>.</para>
+    /// <para>For jagged and multi-dimensional arrays, returns an instance of <seealso cref="ArrayRecord"/>.</para>
     /// </returns>
     /// <exception cref="KeyNotFoundException">Member of such name does not exist.</exception>
     public object? this[string memberName]

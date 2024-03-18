@@ -69,6 +69,6 @@ internal sealed class ArrayOfClassesRecord : ArrayRecord<ClassRecord>
         return (allowed, primitiveType);
     }
 
-    private protected override bool IsElementType(Type typeElement)
+    internal override bool IsElementType(Type typeElement)
         => MemberTypeInfo.IsElementType(typeElement, RecordMap);
 }

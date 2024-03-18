@@ -21,9 +21,9 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 
     private List<SerializationRecord> Records { get; }
 
-    public override bool IsSerializedInstanceOf(Type type) => type == typeof(object[]);
+    public override bool IsTypeNameMatching(Type type) => type == typeof(object[]);
 
-    private protected override bool IsElementType(Type typeElement) => typeElement == typeof(object);
+    internal override bool IsElementType(Type typeElement) => typeElement == typeof(object);
 
     protected override object?[] ToArrayOfT(bool allowNulls)
     {

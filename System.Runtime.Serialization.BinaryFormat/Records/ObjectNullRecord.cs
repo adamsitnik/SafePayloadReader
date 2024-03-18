@@ -18,7 +18,7 @@ internal sealed class ObjectNullRecord : NullsRecord
 
     internal override int NullCount => 1;
 
-    public override bool IsSerializedInstanceOf(Type type) => !type.IsValueType; // TODO: ensure this is expected
+    public override bool IsTypeNameMatching(Type type) => !type.IsValueType; // TODO: ensure this is expected
 
     internal override object? GetValue() => null;
 }

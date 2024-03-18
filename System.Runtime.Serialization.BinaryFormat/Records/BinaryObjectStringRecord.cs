@@ -28,7 +28,7 @@ internal sealed class BinaryObjectStringRecord : SerializationRecord
 
     internal string Value { get; }
 
-    public override bool IsSerializedInstanceOf(Type type) => type == typeof(string);
+    public override bool IsTypeNameMatching(Type type) => type == typeof(string);
 
     internal override object GetValue() => Value;
 

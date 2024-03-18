@@ -175,7 +175,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord
         return (allowed, primitiveType);
     }
 
-    private protected override bool IsElementType(Type typeElement)
+    internal override bool IsElementType(Type typeElement)
         => MemberTypeInfo.IsElementType(typeElement, RecordMap);
 
     /// <summary>
