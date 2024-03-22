@@ -7,88 +7,50 @@ namespace Playground
 {
     internal class Program
     {
-        static void Main()
-        {
-            ClassRecordDemo();
-
-            WithArrayDemo();
-
-            JaggedArrayDemo();
-        }
-
         [Serializable]
-        public class PrimitiveFields
+        public class Sample
         {
             public int Integer;
             public string? Text;
+            public byte[]? ArrayOfBytes;
+            public Sample? ClassInstance;
         }
 
-        static void ClassRecordDemo()
+        static void Main()
         {
-            PrimitiveFields input = new()
+            Sample input = new()
             {
                 Integer = 123,
-                Text = "Hello, World!"
+                Text = "Hello, World!",
+                ArrayOfBytes = [0, 1, 2, 3],
+                ClassInstance = new()
+                {
+                    Text = "ClassRecord"
+                }
             };
 
             using MemoryStream payload = Serialize(input);
 
-            ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<PrimitiveFields>(payload);
-            PrimitiveFields output = new()
+            ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<Sample>(payload);
+            Sample output = new()
             {
-                // using the indexer to read serialized primitive values
-                Integer = rootRecord[nameof(PrimitiveFields.Integer)] is int value ? value : default,
-                Text = rootRecord[nameof(PrimitiveFields.Text)] as string,
+                // using the dedicated methods to read primitive values
+                Integer = rootRecord.GetInt32(nameof(Sample.Integer)),
+                Text = rootRecord.GetString(nameof(Sample.Text)),
+                // using dedicated method to read an array of bytes
+                ArrayOfBytes = rootRecord.GetArrayOfBytes(nameof(Sample.ArrayOfBytes)),
+                // using GetClassRecord to read a class record
+                ClassInstance = new()
+                {
+                    Text = rootRecord
+                        .GetClassRecord(nameof(Sample.ClassInstance))!
+                        .GetString(nameof(Sample.Text))
+                }  
             };
 
             Console.WriteLine($"{output.Integer}, {output.Text}");
-        }
-
-        [Serializable]
-        public class WithArray
-        {
-            public byte[]? ArrayOfBytes;
-        }
-
-        static void WithArrayDemo()
-        {
-            using MemoryStream payload = new ();
-            WithArray input = new()
-            {
-                ArrayOfBytes = [0, 1, 2, 3]
-            };
-
-            new BinaryFormatter().Serialize(payload, input);
-            payload.Position = 0;
-
-            ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<WithArray>(payload);
-            WithArray output = new()
-            {
-                ArrayOfBytes = rootRecord[nameof(WithArray.ArrayOfBytes)] is ArrayRecord<byte> byteArray 
-                    ? byteArray.ToArray() : default,
-            };
-
             Console.WriteLine($"{string.Join(",", output.ArrayOfBytes!)}");
-        }
-
-        static void JaggedArrayDemo()
-        {
-            using MemoryStream payload = new();
-            string[][]? input =
-            [
-                ["a", "b"],
-                ["c", "d"]
-            ];
-
-            new BinaryFormatter().Serialize(payload, input);
-            payload.Position = 0;
-
-            ArrayRecord arrayRecord = PayloadReader.ReadAnyArrayRecord(payload);
-            string[][] jaggedArray = (string[][])arrayRecord.ToArray(expectedArrayType: typeof(string[][]));
-            foreach (string[] array in jaggedArray)
-            {
-                Console.WriteLine($"{string.Join(",", array)}");
-            }
+            Console.WriteLine($"{output.ClassInstance.Text}");
         }
 
         static MemoryStream Serialize<T>(T instance) where T : notnull

@@ -36,6 +36,7 @@ public class JaggedArraysTests : ReadTests
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
+        Assert.Equal(1, arrayRecord.Rank);
     }
 
     [Fact]
@@ -94,7 +95,7 @@ public class JaggedArraysTests : ReadTests
         {
             for (int j = 0; j < input[i].Length; j++)
             {
-                Assert.Equal(input[i][j].SomeField, output[i][j]![nameof(ComplexType.SomeField)]);
+                Assert.Equal(input[i][j].SomeField, output[i][j]!.GetInt32(nameof(ComplexType.SomeField)));
             }
         }
     }

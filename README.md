@@ -5,7 +5,7 @@
 The goal of this library is to allow for safe reading of [Binary Format](https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/75b9fe09-be15-475f-85b8-ae7b7558cfe5) payload from untrusted input.
 
 The principles:
-- Treating every input as hostile.
+- Treating every input as potentially hostile.
 - No type loading of any kind (to avoid remote code execution).
 - No recursion of any kind (to avoid unbound recursion, stack overflow and denial of service).
 - No buffer pre-allocation based on size provided in payload (to avoid running out of memory and denial of service).
@@ -60,89 +60,86 @@ public class ClassRecord : SerializationRecord
 {
     public string TypeName { get; }
     public IEnumerable<string> MemberNames { get; }
-    public object? this[string memberName] { get; } // the indexer
+    
+    // Retrieves the value of the provided memberName
+    public string? GetString(string memberName);
+    public bool GetBoolean(string memberName);
+    public byte GetByte(string memberName);
+    public sbyte GetSByte(string memberName);
+    public short GetInt16(string memberName);
+    public ushort GetUInt16(string memberName);
+    public char GetChar(string memberName);
+    public int GetInt32(string memberName);
+    public uint GetUInt32(string memberName);
+    public float GetSingle(string memberName);
+    public long GetInt64(string memberName);
+    public ulong GetUInt64(string memberName);
+    public double GetDouble(string memberName);
+    public decimal GetDecimal(string memberName);
+    public TimeSpan GetTimeSpan(string memberName);
+    public DateTime GetDateTime(string memberName);
+    public object? GetObject(string memberName);
+
+    // Retrieves an array for the provided memberName, with default max length
+    public string?[]? GetArrayOfStrings(string memberName, bool allowNulls = true, int maxLength = 64000)
+    public bool[]? GetArrayOfBooleans(string memberName, int maxLength = 64000);
+    public byte[]? GetArrayOfBytes(string memberName, int maxLength = 64000);
+    public sbyte[]? GetArrayOfSBytes(string memberName, int maxLength = 64000);
+    public short[]? GetArrayOfInt16s(string memberName, int maxLength = 64000);
+    public ushort[]? GetArrayOfUInt16s(string memberName, int maxLength = 64000);
+    public char[]? GetArrayOfChars(string memberName, int maxLength = 64000);
+    public int[]? GetArrayOfInt32s(string memberName, int maxLength = 64000);
+    public uint[]? GetArrayOfUInt32s(string memberName, int maxLength = 64000);
+    public float[]? GetArrayOfSingles(string memberName, int maxLength = 64000);
+    public long[]? GetArrayOfInt64s(string memberName, int maxLength = 64000);
+    public ulong[]? GetArrayOfUInt64s(string memberName, int maxLength = 64000);
+    public double[]? GetArrayOfDoubles(string memberName, int maxLength = 64000);
+    public decimal[]? GetArrayOfDecimals(string memberName, int maxLength = 64000);
+    public TimeSpan[]? GetArrayOfTimeSpans(string memberName, int maxLength = 64000);
+    public DateTime[]? GetArrayOfDateTimes(string memberName, int maxLength = 64000);
+    public object?[]? GetArrayOfObjects(string memberName, bool allowNulls = true, int maxLength = 64000);
+
+    // Retrieves an instance of ClassRecord that describes non-primitive type for the provided memberName
+    public ClassRecord? GetClassRecord(string memberName);
+    // Retrieves an array of ClassRecords
+    public ClassRecord?[]? GetArrayOfClassRecords(string memberName, bool allowNulls = true, int maxLength = 64000);
+    public SerializationRecord? GetSerializationRecord(string memberName);
 }
 ```
 
-`ClassRecord` **indexer** allows you to read the serialized member values and they are returned as an `object?` instance:
-- For primitive types, returns their value.
-- For nulls, returns a `null`. 
-- For other types that are not arrays, returns an instance of `ClassRecord`.
-- For single-dimensional arrays returns `ArrayRecord<T>` where `T` is primivite type or `ClassRecord`.
-- For jagged and multi-dimensional arrays, returns an instance of `ArrayRecord`.
+`Get$PrimitiveType` methods read a value of given primitive type.
+`GetArrayOf$PrimitiveType` methods read arrays of values of given primitive type.
+`GetClassRecord` method reads an instance of `ClassRecord` that describes non-primitive type like a custom `class` or `struct`.
 
 ```cs
-ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<ComplexType>(payload);
-ComplexType output = new()
+[Serializable]
+public class Sample
 {
-    // using the indexer to read serialized primitive values
-    Integer = rootRecord[nameof(ComplexType.Integer)] is int value ? value : default,
-    Text = rootRecord[nameof(ComplexType.Text)] as string, 
+    public int Integer;
+    public string? Text;
+    public byte[]? ArrayOfBytes;
+    public Sample? ClassInstance;
+}
+
+ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<Sample>(payload);
+Sample output = new()
+{
+    // using the dedicated methods to read primitive values
+    Integer = rootRecord.GetInt32(nameof(Sample.Integer)),
+    Text = rootRecord.GetString(nameof(Sample.Text)),
+    // using dedicated method to read an array of bytes
+    ArrayOfBytes = rootRecord.GetArrayOfBytes(nameof(Sample.ArrayOfBytes)),
+    // using GetClassRecord to read a class record
+    ClassInstance = new()
+    {
+        Text = rootRecord
+            .GetClassRecord(nameof(Sample.ClassInstance))!
+            .GetString(nameof(Sample.Text))
+    }  
 };
 ```
 
-### ArrayRecord
-
-
-As mentioned earlier, the arrays are represented as `ArrayRecord`. It's a base type for all possible array types:
-- single dimension (example: `int[]`),
-- jagged (example: `int[][]`) 
-- multi-dimensional (example: `int[,]`).
-
-```cs
-public class ArrayRecord : SerializationRecord
-{
-    public uint Length { get; }
-    public int Rank { get; }
-    public ArrayType ArrayType {get; 
-
-    public Array ToArray(Type expectedArrayType, bool allowNulls = true, int maxLength = 64_000)};
-}
-```
-
-#### Single dimension
-
-Since single dimension and zero-indexed arrays are expected to be the most common case, the library provides an `ArrayRecord<T>` abstraction, which can be used to represent an array of primitive types and `ClassRecord`s.
-
-
-```cs
-public class ArrayRecord<T> : ArrayRecord
-{
-    public T?[] ToArray(bool allowNulls = true, int maxLength = 64_000);
-}
-```
-
-It provides a strongly-typed `ToArray` method overload that can help you to materialize an array of primitive types or class records.
-
-```cs
-// public class WithArray { public byte[]? ArrayOfBytes; }
-
-ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<WithArray>(payload);
-WithArray output = new()
-{
-    ArrayOfBytes = rootRecord[nameof(WithArray.ArrayOfBytes)] is ArrayRecord<byte> byteArray 
-        ? byteArray.ToArray() : default,
-};
-```
-
-#### Jagged and multi-dimensional
-
-If you are using jagged or multi-dimensional arrays, you can use the `ToArray` method provided by the base `ArrayRecord` type. To ensure you don't materialize something that you are not expecting (example: an array of a max size full of nulls that takes 2GB to deserialize and just 16 bytes to serialize), you need to specify the expected array type as an argument and cast it back to given array.
-
-```cs
-ArrayRecord arrayRecord = PayloadReader.ReadAnyArrayRecord(payload);
-string[][] jaggedArray = (string[][])arrayRecord.ToArray(expectedArrayType: typeof(string[][]));
-```
-
-In case of an array of complex types, the result should be casted to an array of `ClassRecord`:
-
-```cs
-ClassRecord?[,] output = (ClassRecord?[,])arrayRecord.ToArray(typeof(MyCustomType[,]));
-```
-
-
-
-
+TODO: describe how to work with Jagged and Rectangular arrays
 
 
 

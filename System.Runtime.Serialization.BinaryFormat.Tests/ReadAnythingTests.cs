@@ -26,31 +26,31 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             // this innocent line tests type forwards support ;)
             Assert.True(dictionaryRecord.IsTypeNameMatching(typeof(Dictionary<string, object>)));
 
-            ClassRecord comparerRecord = (ClassRecord)dictionaryRecord[nameof(input.Comparer)]!;
+            ClassRecord comparerRecord = dictionaryRecord.GetClassRecord(nameof(input.Comparer))!;
             Assert.True(comparerRecord.IsTypeNameMatching(input.Comparer.GetType()));
 
-            ClassRecord[] keyValuePairs = ((ArrayRecord<ClassRecord>)dictionaryRecord["KeyValuePairs"]!).ToArray()!;
+            ClassRecord[] keyValuePairs = dictionaryRecord.GetArrayOfClassRecords("KeyValuePairs")!;
             Assert.True(keyValuePairs[0].IsTypeNameMatching(typeof(KeyValuePair<string, object>)));
 
             ClassRecord exceptionPair = Find(keyValuePairs, "exception");
-            ClassRecord exceptionValue = (ClassRecord)exceptionPair["value"]!;
+            ClassRecord exceptionValue = exceptionPair.GetClassRecord("value")!;
             Assert.True(exceptionValue.IsTypeNameMatching(typeof(Exception)));
-            Assert.Equal("test", exceptionValue[nameof(Exception.Message)]);
+            Assert.Equal("test", exceptionValue.GetString(nameof(Exception.Message)));
 
             ClassRecord structPair = Find(keyValuePairs, "struct");
-            ClassRecord structValue = (ClassRecord)structPair["value"]!;
+            ClassRecord structValue = structPair.GetClassRecord("value")!;
             Assert.True(structValue.IsTypeNameMatching(typeof(ValueTuple<bool, int>)));
-            Assert.Equal(true, structValue["Item1"]);
-            Assert.Equal(123, structValue["Item2"]);
+            Assert.True(structValue.GetBoolean("Item1"));
+            Assert.Equal(123, structValue.GetInt32("Item2"));
 
             ClassRecord genericPair = Find(keyValuePairs, "generic");
-            ClassRecord genericValue = (ClassRecord)genericPair["value"]!;
+            ClassRecord genericValue = genericPair.GetClassRecord("value")!;
             Assert.True(genericValue.IsTypeNameMatching(typeof(List<int>)));
-            Assert.Equal(4, genericValue["_size"]);
-            Assert.Equal([1, 2, 3, 4], ((ArrayRecord<int>)genericValue["_items"]!).ToArray()!);
+            Assert.Equal(4, genericValue.GetInt32("_size"));
+            Assert.Equal([1, 2, 3, 4], genericValue.GetArrayOfInt32s("_items"));
 
             static ClassRecord Find(ClassRecord[] keyValuePairs, string key)
-                => keyValuePairs.Where(pair => (string)pair["key"]! == key).Single();
+                => keyValuePairs.Where(pair => pair.GetString("key") == key).Single();
         }
     }
 }

@@ -23,7 +23,7 @@ public class EdgeCaseTests : ReadTests
         // It's a surrogate, so there is no type match.
         Assert.False(classRecord.IsTypeNameMatching(typeof(Type)));
         Assert.Equal("System.UnitySerializationHolder", classRecord.TypeName);
-        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord["AssemblyName"]);
+        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.GetString("AssemblyName"));
     }
 
     [Fact]

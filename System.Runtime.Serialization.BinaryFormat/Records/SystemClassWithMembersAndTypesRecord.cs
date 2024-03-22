@@ -57,10 +57,10 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
         {
             int[] bits =
             [
-                (int)this["lo"]!,
-                (int)this["mid"]!,
-                (int)this["hi"]!,
-                (int)this["flags"]!
+                GetInt32("lo"),
+                GetInt32("mid"),
+                GetInt32("hi"),
+                GetInt32("flags")
             ];
 
             return (T)(object)new decimal(bits);

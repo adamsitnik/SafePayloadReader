@@ -26,6 +26,7 @@ public class RectangularArraysTests : ReadTests
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(byte[,])));
         Assert.False(arrayRecord.IsTypeNameMatching(typeof(string[,])));
         Assert.Equal(array, arrayRecord.ToArray(typeof(byte[,])));
+        Assert.Equal(2, arrayRecord.Rank);
     }
 
     [Fact]
@@ -100,8 +101,8 @@ public class RectangularArraysTests : ReadTests
             inputEnumerator.MoveNext();
             ComplexType2D current = (ComplexType2D)inputEnumerator.Current;
 
-            Assert.Equal(current.I, classRecord[nameof(ComplexType2D.I)]);
-            Assert.Equal(current.J, classRecord[nameof(ComplexType2D.J)]);
+            Assert.Equal(current.I, classRecord.GetInt32(nameof(ComplexType2D.I)));
+            Assert.Equal(current.J, classRecord.GetInt32(nameof(ComplexType2D.J)));
         }
     }
 
@@ -128,6 +129,7 @@ public class RectangularArraysTests : ReadTests
         Assert.False(arrayRecord.IsTypeNameMatching(typeof(int[,])));
         Assert.False(arrayRecord.IsTypeNameMatching(typeof(string[,,])));
         Assert.Equal(array, arrayRecord.ToArray(typeof(int[,,])));
+        Assert.Equal(3, arrayRecord.Rank);
     }
 
     [Fact]
@@ -211,9 +213,9 @@ public class RectangularArraysTests : ReadTests
             inputEnumerator.MoveNext();
             ComplexType3D current = (ComplexType3D)inputEnumerator.Current;
 
-            Assert.Equal(current.I, classRecord[nameof(ComplexType3D.I)]);
-            Assert.Equal(current.J, classRecord[nameof(ComplexType3D.J)]);
-            Assert.Equal(current.K, classRecord[nameof(ComplexType3D.K)]);
+            Assert.Equal(current.I, classRecord.GetInt32(nameof(ComplexType3D.I)));
+            Assert.Equal(current.J, classRecord.GetInt32(nameof(ComplexType3D.J)));
+            Assert.Equal(current.K, classRecord.GetInt32(nameof(ComplexType3D.K)));
         }
     }
 }

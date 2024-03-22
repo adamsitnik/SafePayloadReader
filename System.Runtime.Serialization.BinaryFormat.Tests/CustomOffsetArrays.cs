@@ -77,9 +77,9 @@ public class CustomOffsetArrays : ReadTests
                     ComplexType3D expected = (ComplexType3D)input.GetValue(i + lowerBoundI, j + lowerBoundJ, k + lowerBoundK)!;
                     ClassRecord got = (ClassRecord)output.GetValue(i + lowerBoundI, j + lowerBoundJ, k + lowerBoundK)!;
 
-                    Assert.Equal(expected.I, got[nameof(ComplexType3D.I)]);
-                    Assert.Equal(expected.J, got[nameof(ComplexType3D.J)]);
-                    Assert.Equal(expected.K, got[nameof(ComplexType3D.K)]);
+                    Assert.Equal(expected.I, got.GetInt32(nameof(ComplexType3D.I)));
+                    Assert.Equal(expected.J, got.GetInt32(nameof(ComplexType3D.J)));
+                    Assert.Equal(expected.K, got.GetInt32(nameof(ComplexType3D.K)));
                 }
             }
         }
