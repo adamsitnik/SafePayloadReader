@@ -26,6 +26,8 @@ public abstract class ClassRecord : SerializationRecord
 
     public string TypeName => ClassInfo.Name;
 
+    public abstract string LibraryName { get; }
+
     // Currently we don't expose raw values, so we are not preserving the order here.
     public IEnumerable<string> MemberNames => ClassInfo.MemberNames.Keys;
 

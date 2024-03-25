@@ -21,6 +21,8 @@ internal sealed class SystemClassWithMembersRecord : ClassRecord
 
     public override RecordType RecordType => RecordType.SystemClassWithMembers;
 
+    public override string LibraryName => FormatterServices.CoreLibAssemblyName;
+
     internal override int ExpectedValuesCount => ClassInfo.MemberNames.Count;
 
     public override bool IsTypeNameMatching(Type type)

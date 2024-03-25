@@ -7,6 +7,10 @@ namespace System.Runtime.Serialization.BinaryFormat;
 // we need it to handle TypeForwardedFromAttribute!
 internal static class FormatterServices
 {
+    private static string? _coreLibAssemblyName;
+
+    internal static string CoreLibAssemblyName = _coreLibAssemblyName ??= GetAssemblyNameIncludingTypeForwards(typeof(object));
+
     internal static string GetAssemblyNameIncludingTypeForwards(Type type)
     {
         // Special case types like arrays

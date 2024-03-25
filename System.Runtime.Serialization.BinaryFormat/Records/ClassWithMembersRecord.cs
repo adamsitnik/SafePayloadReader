@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -21,6 +20,8 @@ internal sealed class ClassWithMembersRecord : ClassRecord
     }
 
     public override RecordType RecordType => RecordType.ClassWithMembers;
+
+    public override string LibraryName => Library.LibraryName;
 
     internal BinaryLibraryRecord Library { get; }
 

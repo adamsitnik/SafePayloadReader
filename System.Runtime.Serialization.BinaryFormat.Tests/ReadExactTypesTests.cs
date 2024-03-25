@@ -73,9 +73,11 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord serializationRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithStringField>(stream);
+        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithStringField>(stream);
 
-        Assert.Equal(input.Text, serializationRecord.GetString(nameof(CustomTypeWithStringField.Text)));
+        Assert.Equal(input.Text, classRecord.GetString(nameof(CustomTypeWithStringField.Text)));
+        Assert.Equal(typeof(CustomTypeWithStringField).FullName, classRecord.TypeName);
+        Assert.Equal(typeof(CustomTypeWithStringField).Assembly.FullName, classRecord.LibraryName);
     }
 
     [Serializable]
@@ -238,6 +240,8 @@ public class ReadExactTypesTests : ReadTests
         ClassRecord classRecord = PayloadReader.ReadExactClassRecord<Exception>(Serialize(input));
 
         Assert.Equal(input.Message, classRecord.GetString(nameof(Exception.Message)));
+        Assert.Equal(typeof(Exception).FullName, classRecord.TypeName);
+        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.LibraryName);
     }
 
     [Fact]

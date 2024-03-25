@@ -23,6 +23,8 @@ internal sealed class ClassWithIdRecord : ClassRecord
 
     public override RecordType RecordType => RecordType.ClassWithId;
 
+    public override string LibraryName => MetadataClass.LibraryName;
+
     internal override int ObjectId { get; }
 
     internal ClassRecord MetadataClass { get; }

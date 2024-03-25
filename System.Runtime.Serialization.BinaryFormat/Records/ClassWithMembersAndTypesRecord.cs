@@ -24,6 +24,8 @@ internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
 
     public override RecordType RecordType => RecordType.ClassWithMembersAndTypes;
 
+    public override string LibraryName => Library.LibraryName;
+
     internal BinaryLibraryRecord Library { get; }
 
     internal MemberTypeInfo MemberTypeInfo { get; }
