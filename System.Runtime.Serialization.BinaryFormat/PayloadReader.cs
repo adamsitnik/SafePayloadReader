@@ -9,6 +9,60 @@ public static class PayloadReader
     private static readonly UTF8Encoding ThrowOnInvalidUtf8Encoding = new(false, throwOnInvalidBytes: true);
 
     /// <summary>
+    /// Checks if given buffer contains only Binary Formatter payload.
+    /// </summary>
+    /// <param name="bytes">The buffer to inspect</param>
+    /// <returns>True if the first and last bytes indicate Binary Format, otherwise false.</returns>
+    public static bool ContainsBinaryFormatterPayload(ReadOnlySpan<byte> bytes)
+        => bytes.Length >= SerializedStreamHeaderRecord.Size + 2
+            && bytes[0] == (byte)RecordType.SerializedStreamHeader
+            && bytes[bytes.Length - 1] == (byte)RecordType.MessageEnd;
+
+    /// <summary>
+    /// Checks if given stream contains only Binary Formatter payload.
+    /// </summary>
+    /// <param name="stream">The readable and seekable stream to inspect.</param>
+    /// <returns>True if the first and last bytes indicate Binary Format, otherwise false.</returns>
+    /// <exception cref="ArgumentNullException">The stream is null.</exception>
+    /// <exception cref="NotSupportedException">The stream does not support reading or seeking.</exception>
+    /// <exception cref="ObjectDisposedException">The stream was closed.</exception>
+    /// <remarks>It does not modify the position of the stream.</remarks>
+    public static bool ContainsBinaryFormatterPayload(Stream stream)
+    {
+        if (stream is null)
+        { 
+            throw new ArgumentNullException(nameof(stream)); 
+        }
+
+
+        // TODO: discuss an alternative approach, where we would parse SerializedStreamHeaderRecord
+        // here and return false on failure
+
+        long beginning = stream.Position;
+        if (stream.Length - beginning < SerializedStreamHeaderRecord.Size + 2)
+        {
+            return false;
+        }
+
+        try
+        {
+            int firstByte = stream.ReadByte();
+            if (firstByte != (byte)RecordType.SerializedStreamHeader)
+            {
+                return false;
+            }
+
+            stream.Seek(-1, SeekOrigin.End);
+            int lastByte = stream.ReadByte();
+            return lastByte == (byte)RecordType.MessageEnd;
+        }
+        finally
+        {
+            stream.Position = beginning;
+        }
+    }
+
+    /// <summary>
     /// Reads the provided Binary Format payload.
     /// </summary>
     /// <param name="payload">The Binary Format payload.</param>

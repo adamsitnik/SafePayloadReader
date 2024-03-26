@@ -14,6 +14,8 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class SerializedStreamHeaderRecord : SerializationRecord
 {
+    internal const int Size = sizeof(int) * 4;
+
     internal SerializedStreamHeaderRecord(int rootId, int headerId, int majorVersion, int minorVersion)
     {
         RootId = rootId;
