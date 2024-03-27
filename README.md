@@ -59,6 +59,7 @@ The most important type that derives from `SerializationRecord` is `ClassRecord`
 public class ClassRecord : SerializationRecord
 {
     public string TypeName { get; }
+    public string LibraryName { get; }
     public IEnumerable<string> MemberNames { get; }
     
     // Retrieves the value of the provided memberName
@@ -82,21 +83,7 @@ public class ClassRecord : SerializationRecord
 
     // Retrieves an array for the provided memberName, with default max length
     public string?[]? GetArrayOfStrings(string memberName, bool allowNulls = true, int maxLength = 64000)
-    public bool[]? GetArrayOfBooleans(string memberName, int maxLength = 64000);
-    public byte[]? GetArrayOfBytes(string memberName, int maxLength = 64000);
-    public sbyte[]? GetArrayOfSBytes(string memberName, int maxLength = 64000);
-    public short[]? GetArrayOfInt16s(string memberName, int maxLength = 64000);
-    public ushort[]? GetArrayOfUInt16s(string memberName, int maxLength = 64000);
-    public char[]? GetArrayOfChars(string memberName, int maxLength = 64000);
-    public int[]? GetArrayOfInt32s(string memberName, int maxLength = 64000);
-    public uint[]? GetArrayOfUInt32s(string memberName, int maxLength = 64000);
-    public float[]? GetArrayOfSingles(string memberName, int maxLength = 64000);
-    public long[]? GetArrayOfInt64s(string memberName, int maxLength = 64000);
-    public ulong[]? GetArrayOfUInt64s(string memberName, int maxLength = 64000);
-    public double[]? GetArrayOfDoubles(string memberName, int maxLength = 64000);
-    public decimal[]? GetArrayOfDecimals(string memberName, int maxLength = 64000);
-    public TimeSpan[]? GetArrayOfTimeSpans(string memberName, int maxLength = 64000);
-    public DateTime[]? GetArrayOfDateTimes(string memberName, int maxLength = 64000);
+    public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = 64000) where T : unmanaged;
     public object?[]? GetArrayOfObjects(string memberName, bool allowNulls = true, int maxLength = 64000);
 
     // Retrieves an instance of ClassRecord that describes non-primitive type for the provided memberName
@@ -108,7 +95,7 @@ public class ClassRecord : SerializationRecord
 ```
 
 `Get$PrimitiveType` methods read a value of given primitive type.
-`GetArrayOf$PrimitiveType` methods read arrays of values of given primitive type.
+`GetArrayOfPrimitiveType<T>` methods read arrays of values of given primitive type.
 `GetClassRecord` method reads an instance of `ClassRecord` that describes non-primitive type like a custom `class` or `struct`.
 
 ```cs
@@ -128,7 +115,7 @@ Sample output = new()
     Integer = rootRecord.GetInt32(nameof(Sample.Integer)),
     Text = rootRecord.GetString(nameof(Sample.Text)),
     // using dedicated method to read an array of bytes
-    ArrayOfBytes = rootRecord.GetArrayOfBytes(nameof(Sample.ArrayOfBytes)),
+    ArrayOfBytes = rootRecord.GetArrayOfPrimitiveType<byte>(nameof(Sample.ArrayOfBytes)),
     // using GetClassRecord to read a class record
     ClassInstance = new()
     {

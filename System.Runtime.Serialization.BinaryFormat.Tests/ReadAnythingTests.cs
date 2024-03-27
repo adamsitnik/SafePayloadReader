@@ -47,7 +47,7 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             ClassRecord genericValue = genericPair.GetClassRecord("value")!;
             Assert.True(genericValue.IsTypeNameMatching(typeof(List<int>)));
             Assert.Equal(4, genericValue.GetInt32("_size"));
-            Assert.Equal([1, 2, 3, 4], genericValue.GetArrayOfInt32s("_items"));
+            Assert.Equal([1, 2, 3, 4], genericValue.GetArrayOfPrimitiveType<int>("_items"));
 
             static ClassRecord Find(ClassRecord[] keyValuePairs, string key)
                 => keyValuePairs.Where(pair => pair.GetString("key") == key).Single();

@@ -38,7 +38,7 @@ namespace Playground
                 Integer = rootRecord.GetInt32(nameof(Sample.Integer)),
                 Text = rootRecord.GetString(nameof(Sample.Text)),
                 // using dedicated method to read an array of bytes
-                ArrayOfBytes = rootRecord.GetArrayOfBytes(nameof(Sample.ArrayOfBytes)),
+                ArrayOfBytes = rootRecord.GetArrayOfPrimitiveType<byte>(nameof(Sample.ArrayOfBytes)),
                 // using GetClassRecord to read a class record
                 ClassInstance = new()
                 {
