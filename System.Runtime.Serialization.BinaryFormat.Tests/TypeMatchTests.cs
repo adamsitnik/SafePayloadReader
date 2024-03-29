@@ -371,7 +371,7 @@ public class TypeMatchTests : ReadTests
     {
         T[] array = [input];
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(array));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(array));
 
         if (PrimitiveTypes.Contains(typeof(T)))
         {
@@ -399,7 +399,7 @@ public class TypeMatchTests : ReadTests
     {
         T[][] jaggedArray = [[input]];
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(jaggedArray));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(jaggedArray));
 
         Assert.False(arrayRecord.IsTypeNameMatching(typeof(T[])));
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(T[][])));
@@ -433,7 +433,7 @@ public class TypeMatchTests : ReadTests
     private static void VerifyRectangularArray<T>(Array array)
     {
         int arrayRank = array.GetType().GetArrayRank();
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(array));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(array));
 
         Assert.False(arrayRecord is ArrayRecord<T>, userMessage: typeof(T).Name);
         Assert.True(arrayRecord.ArrayType is ArrayType.Rectangular);
@@ -459,7 +459,7 @@ public class TypeMatchTests : ReadTests
         }
         array.SetValue(input, offsets);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(array));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(array));
 
         Assert.False(arrayRecord is ArrayRecord<T>, userMessage: typeof(T).Name);
 

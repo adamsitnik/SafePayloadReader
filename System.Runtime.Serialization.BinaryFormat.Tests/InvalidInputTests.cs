@@ -87,6 +87,6 @@ public class InvalidInputTests : ReadTests
         writer.Write((byte)RecordType.MessageEnd);
 
         stream.Position = 0;
-        Assert.Throws<SerializationException>(() => PayloadReader.ReadArrayOfStrings(stream));
+        Assert.Throws<SerializationException>(() => ((ArrayRecord<string>)PayloadReader.Read(stream)).ToArray());
     }
 }

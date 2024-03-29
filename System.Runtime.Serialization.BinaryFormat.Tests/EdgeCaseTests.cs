@@ -35,7 +35,7 @@ public class EdgeCaseTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        string?[] ouput = PayloadReader.ReadArrayOfStrings(stream);
+        string?[] ouput = ((ArrayRecord<string>)PayloadReader.Read(stream)).ToArray();
 
         Assert.Equal(input, ouput);
         Assert.Same(ouput[0], ouput[1]);
@@ -56,7 +56,7 @@ public class EdgeCaseTests : ReadTests
         // MemoryStream can not handle large array payloads as it's backed by an array.
         using FileStream stream = SerializeToFile(input);
 
-        byte[] output = PayloadReader.ReadArrayOfPrimitiveType<byte>(stream, maxLength: length);
+        byte[] output = ((ArrayRecord<byte>)PayloadReader.Read(stream)).ToArray(maxLength: length);
         Assert.Equal(input, output);
     }
 }

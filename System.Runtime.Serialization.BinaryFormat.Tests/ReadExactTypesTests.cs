@@ -180,7 +180,7 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
-        Assert.Equal(input.Texts, classRecord.GetArrayOfStrings(nameof(CustomTypeWithStringArrayField.Texts)));
+        Assert.Equal(input.Texts, classRecord.GetArrayOfPrimitiveType<string>(nameof(CustomTypeWithStringArrayField.Texts)));
     }
 
     [Theory]
@@ -195,7 +195,7 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
-        Assert.Equal(input.Texts, classRecord.GetArrayOfStrings(nameof(CustomTypeWithStringArrayField.Texts)));
+        Assert.Equal(input.Texts, classRecord.GetArrayOfPrimitiveType<string>(nameof(CustomTypeWithStringArrayField.Texts)));
     }
 
     [Fact]
@@ -205,7 +205,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        string?[] output = PayloadReader.ReadArrayOfStrings(stream);
+        string?[] output = ((ArrayRecord<string>)PayloadReader.Read(stream)).ToArray();
 
         Assert.Equal(input, output);
     }
@@ -217,22 +217,10 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ulong[] output = PayloadReader.ReadArrayOfPrimitiveType<ulong>(stream);
+        ulong[] output = ((ArrayRecord<ulong>)PayloadReader.Read(stream)).ToArray();
 
         Assert.Equal(input, output);
     }
-
-#if !NETFRAMEWORK // Half was introduced in 5.0
-    [Fact]
-    public void ReadArrayOfPrimitiveType_Throws_NotSupportedException_ForPrimitivesThatAreNotSerializable()
-    {
-        Half[] input = [Half.MinValue, Half.MaxValue];
-
-        Assert.Throws<SerializationException>(() => Serialize(input));
-        // we throw a different exception than BinaryFormatter
-        Assert.Throws<NotSupportedException>(() => PayloadReader.ReadArrayOfPrimitiveType<Half>(Stream.Null));
-    }
-#endif
 
     [Fact]
     public void CanRead_ComplexSystemType()
@@ -275,7 +263,7 @@ public class ReadExactTypesTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord?[] classRecords = PayloadReader.ReadArrayOfClassRecords(stream);
+        ClassRecord?[] classRecords = ((ArrayRecord<ClassRecord>)PayloadReader.Read(stream)).ToArray();
 
         for (int i = 0; i < input.Length; i++)
         {
@@ -307,7 +295,8 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
-        ClassRecord?[] array = classRecord.GetArrayOfClassRecords(nameof(CustomTypeWithArrayOfComplexTypes.Array))!;
+        ArrayRecord<ClassRecord> classRecords = (ArrayRecord<ClassRecord>)classRecord.GetSerializationRecord(nameof(CustomTypeWithArrayOfComplexTypes.Array))!;
+        ClassRecord?[] array = classRecords.ToArray();
     }
 
     [Theory]
@@ -324,11 +313,12 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = PayloadReader.ReadClassRecord(stream);
 
-        ClassRecord?[] array = classRecord.GetArrayOfClassRecords(nameof(CustomTypeWithArrayOfComplexTypes.Array))!;
+        ArrayRecord<ClassRecord> classRecords = (ArrayRecord<ClassRecord>)classRecord.GetSerializationRecord(nameof(CustomTypeWithArrayOfComplexTypes.Array))!;
+        ClassRecord?[] array = classRecords.ToArray();
         Assert.Equal(nullCount, array.Length);
         Assert.All(array, Assert.Null);
 
-        Assert.Throws<SerializationException>(() => classRecord.GetArrayOfClassRecords(nameof(CustomTypeWithArrayOfComplexTypes.Array), allowNulls: false));
+        Assert.Throws<SerializationException>(() => classRecords.ToArray(allowNulls: false));
     }
 
     [Fact]
@@ -340,7 +330,7 @@ public class ReadExactTypesTests : ReadTests
             null
         ];
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
         object?[] output = ((ArrayRecord<object>)arrayRecord).ToArray();
 
         Assert.Equal(input, output);
@@ -353,7 +343,7 @@ public class ReadExactTypesTests : ReadTests
     {
         object?[] input = Enumerable.Repeat<object>(null!, nullCount).ToArray();
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
         object?[] output = ((ArrayRecord<object>)arrayRecord).ToArray();
 
         Assert.Equal(nullCount, output.Length);
@@ -390,9 +380,7 @@ public class ReadExactTypesTests : ReadTests
     [InlineData("")] // null is prohibited by the BinaryFormatter itself
     public void CanReadString(string input)
     {
-        using MemoryStream stream = Serialize(input);
-
-        string output = PayloadReader.ReadString(stream);
+        string output = ((PrimitiveTypeRecord<string>)PayloadReader.Read(Serialize(input))).Value;
 
         Assert.Equal(input, output);
     }

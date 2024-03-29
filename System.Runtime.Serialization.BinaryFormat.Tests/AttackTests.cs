@@ -56,7 +56,7 @@ public class AttackTests : ReadTests
         input[0] = "not an array";
         input[1] = input;
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
         object?[] output = ((ArrayRecord<object>)arrayRecord).ToArray();
 
         Assert.Equal(input[0], output[0]);
@@ -103,8 +103,8 @@ public class AttackTests : ReadTests
         ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
         Assert.Equal(input.Name, classRecord.GetString(nameof(WithCyclicReferenceInArrayOfT.Name)));
-        ClassRecord?[] classRecords = classRecord.GetArrayOfClassRecords(nameof(WithCyclicReferenceInArrayOfT.ArrayWithReferenceToSelf))!;
-        Assert.Same(classRecord, classRecords.Single());
+        ArrayRecord<ClassRecord> classRecords = (ArrayRecord<ClassRecord>)classRecord.GetSerializationRecord(nameof(WithCyclicReferenceInArrayOfT.ArrayWithReferenceToSelf))!;
+        Assert.Same(classRecord, classRecords.ToArray().Single());
     }
 
 #if !NETFRAMEWORK
@@ -194,7 +194,7 @@ public class AttackTests : ReadTests
 
         SerializationRecord serializationRecord = PayloadReader.Read(stream);
 
-        static Exception CreateNewExceptionTypeAndInstantiateIt(Type[] ctorTypes, ConstructorInfo baseCtor, 
+        static Exception CreateNewExceptionTypeAndInstantiateIt(Type[] ctorTypes, ConstructorInfo baseCtor,
             ModuleBuilder module, Exception previous, int i)
         {
 #pragma warning disable SYSLIB0050 // Type or member is obsolete (I know!)
@@ -236,7 +236,7 @@ public class AttackTests : ReadTests
         WriteSerializedStreamHeader(writer);
         WriteBinaryLibrary(writer, LibraryId, "LibraryName");
 
-        for (int i = 1; i <= ClassesCount; )
+        for (int i = 1; i <= ClassesCount;)
         {
             // ClassInfo (always present)
             writer.Write((byte)recordType);

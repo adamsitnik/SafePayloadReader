@@ -29,7 +29,8 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             ClassRecord comparerRecord = dictionaryRecord.GetClassRecord(nameof(input.Comparer))!;
             Assert.True(comparerRecord.IsTypeNameMatching(input.Comparer.GetType()));
 
-            ClassRecord[] keyValuePairs = dictionaryRecord.GetArrayOfClassRecords("KeyValuePairs")!;
+            ArrayRecord<ClassRecord> arrayRecord = (ArrayRecord<ClassRecord>)dictionaryRecord.GetSerializationRecord("KeyValuePairs")!;
+            ClassRecord[] keyValuePairs = arrayRecord.ToArray()!;
             Assert.True(keyValuePairs[0].IsTypeNameMatching(typeof(KeyValuePair<string, object>)));
 
             ClassRecord exceptionPair = Find(keyValuePairs, "exception");

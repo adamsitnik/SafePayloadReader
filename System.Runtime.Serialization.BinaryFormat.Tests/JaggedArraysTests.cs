@@ -14,7 +14,7 @@ public class JaggedArraysTests : ReadTests
             input[i] = [i, i, i];
         }
 
-        var arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        var arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
@@ -31,7 +31,7 @@ public class JaggedArraysTests : ReadTests
             input[i][0] = [i, i, i];
         }
 
-        var arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        var arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
@@ -48,7 +48,7 @@ public class JaggedArraysTests : ReadTests
             input[i] = ["a", "b", "c"];
         }
 
-        var arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        var arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
@@ -64,7 +64,7 @@ public class JaggedArraysTests : ReadTests
             input[i] = ["a", 1, DateTime.MaxValue];
         }
 
-        var arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        var arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);
@@ -86,7 +86,7 @@ public class JaggedArraysTests : ReadTests
             input[i] = Enumerable.Range(0, i + 1).Select(j => new ComplexType { SomeField = j }).ToArray();
         }
 
-        var arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        var arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Assert.Equal(ArrayType.Jagged, arrayRecord.ArrayType);

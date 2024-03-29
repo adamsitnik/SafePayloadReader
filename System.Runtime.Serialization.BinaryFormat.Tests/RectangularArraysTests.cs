@@ -20,7 +20,7 @@ public class RectangularArraysTests : ReadTests
         }
         using FileStream stream = SerializeToFile(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(byte[,])));
@@ -42,7 +42,7 @@ public class RectangularArraysTests : ReadTests
         }
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(string[,])));
@@ -62,7 +62,7 @@ public class RectangularArraysTests : ReadTests
         }
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(object[,])));
@@ -89,7 +89,7 @@ public class RectangularArraysTests : ReadTests
         }
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(ComplexType2D[,])));
@@ -122,7 +122,7 @@ public class RectangularArraysTests : ReadTests
         }
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(int[,,])));
@@ -148,7 +148,7 @@ public class RectangularArraysTests : ReadTests
         }
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(string[,,])));
@@ -169,7 +169,7 @@ public class RectangularArraysTests : ReadTests
         } 
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(object[,,])));
@@ -200,7 +200,7 @@ public class RectangularArraysTests : ReadTests
         }
         using MemoryStream stream = Serialize(array);
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(stream);
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(stream);
 
         Assert.Equal((uint)array.Length, arrayRecord.Length);
         Assert.True(arrayRecord.IsTypeNameMatching(typeof(ComplexType3D[,,])));

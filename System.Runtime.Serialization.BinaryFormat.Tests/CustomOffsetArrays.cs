@@ -14,7 +14,7 @@ public class CustomOffsetArrays : ReadTests
             input.SetValue(value: i, index: i); 
         }
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
@@ -32,7 +32,7 @@ public class CustomOffsetArrays : ReadTests
             }
         }
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal(input, arrayRecord.ToArray(input.GetType()));
     }
@@ -63,7 +63,7 @@ public class CustomOffsetArrays : ReadTests
             }
         }
 
-        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal((uint)input.Length, arrayRecord.Length);
         Array output = arrayRecord.ToArray(input.GetType());

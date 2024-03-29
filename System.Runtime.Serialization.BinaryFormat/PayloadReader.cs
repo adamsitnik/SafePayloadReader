@@ -86,89 +86,12 @@ public static class PayloadReader
     }
 
     /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain only a single <seealso cref="string"/>.
-    /// </summary>
-    /// <returns>The deserialized string value.</returns>
-    /// <inheritdoc cref="Read"/>
-    public static string ReadString(Stream payload, bool leaveOpen = false)
-    {
-        var result = (BinaryObjectStringRecord)Read(payload, leaveOpen);
-        return result.Value;
-    }
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain a primitive value of <typeparamref name="T"/> type.
-    /// </summary>
-    /// <returns>The deserialized <typeparamref name="T"/> value.</returns>
-    /// <exception cref="NotSupportedException">For <seealso cref="System.Half"/> and other primitive types that are not natively supported by the Binary Formatter itself.</exception>
-    /// <inheritdoc cref="Read"/>
-    public static T ReadPrimitiveType<T>(Stream payload, bool leaveOpen = false)
-        where T : unmanaged
-    {
-        ThrowForUnsupportedPrimitiveType<T>();
-
-        var result = (PrimitiveTypeRecord<T>)Read(payload, leaveOpen);
-        return result.Value;
-    }
-
-    /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain an instance of any class (or struct) that is not an <seealso cref="Array"/> or a primitive type.
     /// </summary>
     /// <returns>A <seealso cref="ClassRecord"/> that represents the root object.</returns>
     /// <inheritdoc cref="Read"/>
     public static ClassRecord ReadClassRecord(Stream payload, bool leaveOpen = false)
         => (ClassRecord)Read(payload, leaveOpen);
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain an instance
-    /// of any array (single dimension, jagged or multi-dimension).
-    /// </summary>
-    /// <returns>An <seealso cref="ArrayRecord"/> that represents the root object.</returns>
-    /// <inheritdoc cref="Read"/>
-    public static ArrayRecord ReadArrayRecord(Stream payload, bool leaveOpen = false)
-        => (ArrayRecord)Read(payload, leaveOpen);
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain a single dimension array of primitive values of <typeparamref name="T"/> type.
-    /// </summary>
-    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
-    /// <returns>The deserialized array of <typeparamref name="T"/>.</returns>
-    /// <exception cref="NotSupportedException">For <seealso cref="System.Half"/> and other primitive types that are not natively supported by the Binary Formatter itself.</exception>
-    /// <inheritdoc cref="Read"/>
-    public static T[] ReadArrayOfPrimitiveType<T>(Stream payload, bool leaveOpen = false, int maxLength = ArrayRecord.DefaultMaxArrayLength)
-        where T : unmanaged
-    {
-        ThrowForUnsupportedPrimitiveType<T>();
-
-        var result = (ArrayRecord<T>)Read(payload, leaveOpen);
-        return result.ToArray(allowNulls: false, maxLength);
-    }
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain a single dimension array of <seealso cref="string"/>.
-    /// </summary>
-    /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
-    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
-    /// <returns>The deserialized array of <seealso cref="string"/>.</returns>
-    /// <inheritdoc cref="Read"/>
-    public static string?[] ReadArrayOfStrings(Stream payload, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
-    {
-        var result = (ArrayRecord<string>)Read(payload, leaveOpen);
-        return result.ToArray(allowNulls, maxLength);
-    }
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain a single dimension array of any class (or struct) instances.
-    /// </summary>
-    /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
-    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
-    /// <returns>An array of <seealso cref="ClassRecord"/> instances.</returns>
-    /// <inheritdoc cref="Read"/>
-    public static ClassRecord?[] ReadArrayOfClassRecords(Stream stream, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
-    {
-        var result = (ArrayRecord<ClassRecord>)Read(stream, leaveOpen);
-        return result.ToArray(allowNulls, maxLength);
-    }
 
     private static SerializationRecord Read(BinaryReader reader)
     {
@@ -213,7 +136,10 @@ public static class PayloadReader
             PushFirstNestedRecordInfo(nextRecord, readStack);
         } while (recordType != RecordType.MessageEnd);
 
-        return MapToUserFriendly(recordMap[header.RootId]);
+        SerializationRecord rootRecord = recordMap[header.RootId];
+        return rootRecord is SystemClassWithMembersAndTypesRecord systemClass
+            ? systemClass.TryToMapToUserFriendly()
+            : rootRecord;
     }
 
     private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap, 
@@ -348,26 +274,4 @@ public static class PayloadReader
             readStack.Push(new(allowed, arrayRecord, readStack, primitiveType));
         }
     }
-
-    private static void ThrowForUnsupportedPrimitiveType<T>() where T : unmanaged
-    {
-        // a very weird way of performing typeof(T) == typeof(Half) check in NS2.0
-        if (!(typeof(T) == typeof(bool) || typeof(T) == typeof(char)
-            || typeof(T) == typeof(byte) || typeof(T) == typeof(sbyte)
-            || typeof(T) == typeof(short) || typeof(T) == typeof(ushort)
-            || typeof(T) == typeof(int) || typeof(T) == typeof(uint)
-            || typeof(T) == typeof(long) || typeof(T) == typeof(ulong)
-            || typeof(T) == typeof(IntPtr) || typeof(T) == typeof(UIntPtr)
-            || typeof(T) == typeof(float) || typeof(T) == typeof(double)
-            || typeof(T) == typeof(decimal)
-            || typeof(T) == typeof(DateTime) || typeof(T) == typeof(TimeSpan)))
-        {
-            throw new NotSupportedException($"Type {typeof(T)} is not supported by the Binary Format.");
-        }
-    }
-
-    private static SerializationRecord MapToUserFriendly(SerializationRecord serializationRecord)
-        => serializationRecord is SystemClassWithMembersAndTypesRecord systemClass
-            ? systemClass.TryToMapToUserFriendly()
-            : serializationRecord;
 }

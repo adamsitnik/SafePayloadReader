@@ -16,44 +16,34 @@ The principles:
 
 [BinaryFormatter.Serialize](https://learn.microsoft.com/dotnet/api/system.runtime.serialization.formatters.binary.binaryformatter.serialize) method accepts two arguments: `Stream serializationStream` and `object graph`. The first is a stream that we call the **payload**  and the latter is the **root object** of the serialization graph.
 
-The Binary Formatter payload consists of serialization records that represent the serialized objects and their metadata. To read the whole payload and get the root object, the user can call `static SerializationRecord Read(Stream payload, bool leaveOpen = false)` method (TODO: add option bag when we have it).
+The Binary Formatter payload consists of serialization records that represent the serialized objects and their metadata. To read the whole payload and get the root object, the user need to call `static SerializationRecord Read(Stream payload, bool leaveOpen = false)` method (TODO: add option bag when we have it). There is more than a dozen of different serialization [record types](https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/954a0657-b901-4813-9398-4ec732fe8b32), but this library provides a set of abstractions, so the users need to learn only a few of them:
+- `PrimitiveTypeRecord<T>` that describes all primitive types natively supported by the Binary Format (`string`, `bool`, `char`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, `TimeSpan`, `DateTime`)
+- `ClassRecord` that describes all `class` and `struct`  beside the formentioned primitive types.
+- `ArrayRecord<T>` that describes single-dimension array records, where `T` can be either a primitive type or `ClassRecord`.
+- `ArrayRecord` that describes all array records including jagged and multi-dimensional arrays.
 
 ```cs
 SerializationRecord rootObject = PayloadReader.Read(payload);
-```
 
-There is more than a dozen of different serialization [record types](https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/954a0657-b901-4813-9398-4ec732fe8b32), but this library provides a set of abstractions, so the users need to learn only a few of them.
-
-`SerializationRecord` is a base type that exposes information about the exact `RecordType`.
-
-```cs
-public class SerializationRecord
+if (rootObject is PrimitiveTypeRecord<string> stringRecord)
 {
-    public RecordType RecordType { get; }
-
-    public bool IsTypeNameMatching(Type type);
+    Console.WriteLine($"It was a string: '{stringRecord.Value}'");
+}
+else if (rootObject is ClassRecord classRecord)
+{
+    Console.WriteLine($"It was a class record of '{classRecord.TypeName}' type.");
+}
+else if (rootObject is ArrayRecord<byte> arrayOfBytes)
+{
+    Console.WriteLine($"It was an array of bytes: '{string.Join(",", arrayOfBytes.ToArray())}'");
 }
 ```
 
-And a helper method that allows to check whether the serialized type name information matches the provided `Type` (it takes type forwarding into acount).
-
-```cs
-SerializationRecord rootObject = PayloadReader.Read(payload);
-if (!rootObject.IsTypeNameMatching(typeof($ExpectedType)))
-{
-    throw new Exception("The payload contains unexpected data!");
-}
-```
-
-Beside `Read`, the `PayloadReader` exposes a set of dedicated methods for reading exact records:
-- `ReadClassRecord` and `ReadArrayOfClassRecords` for reading `class` and `struct` information
-- `ReadString` and `ReadArrayOfStrings` for reading `string` value(s)
-- `ReadPrimitiveType<T>` and `ReadArrayOfPrimitiveType<T>` for reading primitive type value(s)
-- `ReadArrayRecord` for reading any arrays
+Beside `Read`, the `PayloadReader` exposes a `ReadClassRecord` method that returns `ClassRecord` (or throws) and. It also provides two `ContainsBinaryFormatterPayload` methods that allow to **check whether given stream or buffer contains binary formatter payload**.
 
 ### ClassRecord
 
-The most important type that derives from `SerializationRecord` is `ClassRecord` which represents **all `class` and `struct` instances beside arrays and selected primitive types** (`string`, `bool`, `char`, `byte`, `sbyte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, `TimeSpan`, `DateTime`).
+The most important type that derives from `SerializationRecord` is `ClassRecord` which represents **all `class` and `struct` instances beside arrays and selected primitive types**.
 
 ```cs
 public class ClassRecord : SerializationRecord
@@ -85,13 +75,11 @@ public class ClassRecord : SerializationRecord
     public object? GetObject(string memberName);
 
     // Retrieves an array for the provided memberName, with default max length
-    public string?[]? GetArrayOfStrings(string memberName, bool allowNulls = true, int maxLength = 64000)
     public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = 64000) where T : unmanaged;
 
     // Retrieves an instance of ClassRecord that describes non-primitive type for the provided memberName
     public ClassRecord? GetClassRecord(string memberName);
-    // Retrieves an array of ClassRecords
-    public ClassRecord?[]? GetArrayOfClassRecords(string memberName, bool allowNulls = true, int maxLength = 64000);
+    // Retrieves any other serialization record like jagged array or array of complex types
     public SerializationRecord? GetSerializationRecord(string memberName);
 }
 ```

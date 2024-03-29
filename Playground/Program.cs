@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.BinaryFormat;
 using System.Runtime.Serialization.Formatters.Binary;
@@ -51,6 +52,32 @@ namespace Playground
             Console.WriteLine($"{output.Integer}, {output.Text}");
             Console.WriteLine($"{string.Join(",", output.ArrayOfBytes!)}");
             Console.WriteLine($"{output.ClassInstance.Text}");
+        }
+
+        static void SwitchLike()
+        {
+            object input = Random.Shared.Next(0, 3) switch
+            {
+                0 => "text",
+                1 => new byte[] { 0, 1, 2, 3 },
+                _ => new KeyValuePair<string, int>("demo", 5)
+            };
+
+            using MemoryStream payload = Serialize(input);
+            SerializationRecord rootObject = PayloadReader.Read(payload);
+
+            if (rootObject is PrimitiveTypeRecord<string> stringRecord)
+            {
+                Console.WriteLine($"It was a string: '{stringRecord.Value}'");
+            }
+            else if (rootObject is ArrayRecord<byte> arrayOfBytes)
+            {
+                Console.WriteLine($"It was an array of bytes: '{string.Join(",", arrayOfBytes.ToArray())}'");
+            }
+            else if (rootObject is ClassRecord classRecord)
+            {
+                Console.WriteLine($"It was a class record of '{classRecord.TypeName}' type.");
+            }
         }
 
         static MemoryStream Serialize<T>(T instance) where T : notnull

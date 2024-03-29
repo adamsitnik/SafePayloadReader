@@ -42,7 +42,7 @@ public abstract class ClassRecord : SerializationRecord
     /// <summary>
     /// Checks if member of given name was present in the payload.
     /// </summary>
-    /// <param name="memberName">The name of the field.</param>
+    /// <param name="memberName">The name of the member.</param>
     /// <returns>True if it was present, otherwise false.</returns>
     /// <remarks>
     /// It's recommended to use this method when dealing with payload that may contain
@@ -53,9 +53,9 @@ public abstract class ClassRecord : SerializationRecord
     /// <summary>
     /// Retrieves the value of the provided <paramref name="memberName"/>.
     /// </summary>
-    /// <param name="memberName">The name of the field.</param>
+    /// <param name="memberName">The name of the member.</param>
     /// <returns>The value.</returns>
-    /// <exception cref="KeyNotFoundException">Member of such name does not exist.</exception>
+    /// <exception cref="KeyNotFoundException">Member of such name does not exist. You can use <seealso cref="HasMember(string)"/> to check if given member exists.</exception>
     /// <exception cref="InvalidOperationException">Member of such name has value of a different type.</exception>
     public ClassRecord? GetClassRecord(string memberName) => GetMember<ClassRecord>(memberName);
 
@@ -111,32 +111,22 @@ public abstract class ClassRecord : SerializationRecord
     /// <returns>The array itself or null.</returns>
     /// <exception cref="KeyNotFoundException">Member of such name does not exist.</exception>
     /// <exception cref="InvalidOperationException">Member of such name has value of a different type.</exception>
-    public ClassRecord?[]? GetArrayOfClassRecords(string memberName, bool allowNulls = true, int maxLength = MaxLength)
-        => GetMember<ArrayRecord<ClassRecord>>(memberName)?.ToArray(allowNulls, maxLength);
-    /// <inheritdoc cref="GetArrayOfClassRecords(string)"/>
-    public string?[]? GetArrayOfStrings(string memberName, bool allowNulls = true, int maxLength = MaxLength)
-        => GetMember<ArrayRecord<string>>(memberName)?.ToArray(allowNulls, maxLength);
-    /// <inheritdoc cref="GetArrayOfClassRecords(string)"/>
-    public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = MaxLength) where T : unmanaged
-        => GetMember<ArrayRecord<T>>(memberName)?.ToArray(false, maxLength);
-
-    public Array? GetJaggedArray(string memberName, Type expectedArrayType, bool allowNulls = true, int maxLength = MaxLength)
-        => GetMember<BinaryArrayRecord>(memberName)?.ToArray(expectedArrayType, allowNulls, maxLength);
-
-    public Array? GetRectangularArray(string memberName, Type expectedArrayType, bool allowNulls = true, int maxLength = MaxLength)
-        => GetMember<RectangularOrCustomOffsetArrayRecord>(memberName)?.ToArray(expectedArrayType, allowNulls, maxLength);
+    public T?[]? GetArrayOfPrimitiveType<T>(string memberName, bool allowNulls = true, int maxLength = MaxLength)
+        => GetMember<ArrayRecord<T>>(memberName)?.ToArray(allowNulls, maxLength);
 
     /// <summary>
     /// Retrieves the <see cref="SerializationRecord" /> of the provided <paramref name="memberName"/>.
     /// </summary>
     /// <param name="memberName">The name of the field.</param>
-    /// <returns>The serialization record or null.</returns>
+    /// <returns>The serialization record which can be either <seealso cref="PrimitiveTypeRecord{T}"/>,
+    /// a <seealso cref="ClassRecord"/>, an <seealso cref="ArrayRecord"/> or a null.
+    /// </returns>
     /// <exception cref="KeyNotFoundException">Member of such name does not exist.</exception>
     /// <exception cref="InvalidOperationException">Member of such name has value of a different type or was a primitive value.</exception>
     public SerializationRecord? GetSerializationRecord(string memberName)
         => MemberValues[ClassInfo.MemberNames[memberName]] switch
         {
-            null => null,
+            null or NullsRecord => null,
             MemberReferenceRecord referenceRecord => referenceRecord.GetReferencedRecord(),
             SerializationRecord serializationRecord => serializationRecord,
             _ => throw new InvalidOperationException()
