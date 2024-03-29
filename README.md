@@ -46,10 +46,10 @@ if (!rootObject.IsTypeNameMatching(typeof($ExpectedType)))
 ```
 
 Beside `Read`, the `PayloadReader` exposes a set of dedicated methods for reading exact records:
-- `ReadString` and `ReadArrayOfStrings`
-- `ReadPrimitiveType<T>` and `ReadArrayOfPrimitiveType<T>`
-- `ReadAnyClassRecord`, `ReadExactClassRecord<T>` (it performs the check `IsTypeNameMatching` shown above)), `ReadArrayOfAnyClassRecords` and `ReadArrayOfExactClassRecords<T>` (it also performs the type name check)
-- `ReadAnyArrayRecord` and `ReadArrayOfObjects`
+- `ReadClassRecord` and `ReadArrayOfClassRecords` for reading `class` and `struct` information
+- `ReadString` and `ReadArrayOfStrings` for reading `string` value(s)
+- `ReadPrimitiveType<T>` and `ReadArrayOfPrimitiveType<T>` for reading primitive type value(s)
+- `ReadArrayRecord` for reading any arrays
 
 ### ClassRecord
 
@@ -111,7 +111,7 @@ public class Sample
     public Sample? ClassInstance;
 }
 
-ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<Sample>(payload);
+ClassRecord rootRecord = PayloadReader.ReadClassRecord(payload);
 Sample output = new()
 {
     // using the dedicated methods to read primitive values

@@ -122,24 +122,8 @@ public static class PayloadReader
     /// </summary>
     /// <returns>A <seealso cref="ClassRecord"/> that represents the root object.</returns>
     /// <inheritdoc cref="Read"/>
-    public static ClassRecord ReadAnyClassRecord(Stream payload, bool leaveOpen = false)
+    public static ClassRecord ReadClassRecord(Stream payload, bool leaveOpen = false)
         => (ClassRecord)Read(payload, leaveOpen);
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain an instance of <typeparamref name="T"/> class (or struct).
-    /// </summary>
-    /// <returns>A <seealso cref="ClassRecord"/> that represents the root object.</returns>
-    /// <remarks><typeparamref name="T"/> needs to be the exact type, not a base type or an abstraction.</remarks>
-    /// <inheritdoc cref="Read"/>
-    public static ClassRecord ReadExactClassRecord<T>(Stream payload, bool leaveOpen = false)
-    {
-        ClassRecord result = ReadAnyClassRecord(payload, leaveOpen);
-        if (!result.IsTypeNameMatching(typeof(T)))
-        {
-            ThrowHelper.ThrowTypeMismatch(expected: typeof(T));
-        }
-        return result;
-    }
 
     /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain an instance
@@ -147,7 +131,7 @@ public static class PayloadReader
     /// </summary>
     /// <returns>An <seealso cref="ArrayRecord"/> that represents the root object.</returns>
     /// <inheritdoc cref="Read"/>
-    public static ArrayRecord ReadAnyArrayRecord(Stream payload, bool leaveOpen = false)
+    public static ArrayRecord ReadArrayRecord(Stream payload, bool leaveOpen = false)
         => (ArrayRecord)Read(payload, leaveOpen);
 
     /// <summary>
@@ -203,26 +187,9 @@ public static class PayloadReader
     /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
     /// <returns>An array of <seealso cref="ClassRecord"/> instances.</returns>
     /// <inheritdoc cref="Read"/>
-    public static ClassRecord?[] ReadArrayOfAnyClassRecords(Stream stream, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
+    public static ClassRecord?[] ReadArrayOfClassRecords(Stream stream, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
     {
         var result = (ArrayRecord<ClassRecord>)Read(stream, leaveOpen);
-        return result.ToArray(allowNulls, maxLength);
-    }
-
-    /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain a single dimension array of <typeparamref name="T"/> class (or struct) instances.
-    /// </summary>
-    /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
-    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
-    /// <returns>An array of <seealso cref="ClassRecord"/> instances.</returns>
-    /// <inheritdoc cref="Read"/>
-    public static ClassRecord?[] ReadArrayOfExactClassRecords<T>(Stream stream, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
-    {
-        var result = (ArrayRecord<ClassRecord>)Read(stream, leaveOpen);
-        if (!result.IsElementType(typeof(T)))
-        {
-            ThrowHelper.ThrowTypeMismatch(expected: typeof(T[]));
-        }
         return result.ToArray(allowNulls, maxLength);
     }
 

@@ -31,7 +31,7 @@ namespace Playground
 
             using MemoryStream payload = Serialize(input);
 
-            ClassRecord rootRecord = PayloadReader.ReadExactClassRecord<Sample>(payload);
+            ClassRecord rootRecord = PayloadReader.ReadClassRecord(payload);
             Sample output = new()
             {
                 // using the dedicated methods to read primitive values

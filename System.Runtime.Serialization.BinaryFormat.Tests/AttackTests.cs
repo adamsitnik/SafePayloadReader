@@ -25,7 +25,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<WithCyclicReference>(stream);
+        ClassRecord classRecord = PayloadReader.ReadClassRecord(stream);
 
         Assert.Same(classRecord, classRecord.GetClassRecord(nameof(WithCyclicReference.ReferenceToSelf)));
         Assert.Equal(input.Name, classRecord.GetString(nameof(WithCyclicReference.Name)));
@@ -43,7 +43,7 @@ public class AttackTests : ReadTests
 
         using MemoryStream stream = Serialize(input);
 
-        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<Exception>(stream);
+        ClassRecord classRecord = PayloadReader.ReadClassRecord(stream);
 
         Assert.Same(classRecord, classRecord.GetClassRecord(nameof(Exception.InnerException)));
         Assert.Equal(input.Message, classRecord.GetString(nameof(Exception.Message)));
@@ -79,7 +79,7 @@ public class AttackTests : ReadTests
         input.Name = "hello";
         input.ArrayWithReferenceToSelf = [input];
 
-        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<WithCyclicReferenceInArrayOfObjects>(Serialize(input));
+        ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
         Assert.Equal(input.Name, classRecord.GetString(nameof(WithCyclicReferenceInArrayOfObjects.Name)));
         object?[] array = classRecord.GetArrayOfObjects(nameof(WithCyclicReferenceInArrayOfObjects.ArrayWithReferenceToSelf))!;
@@ -100,7 +100,7 @@ public class AttackTests : ReadTests
         input.Name = "hello";
         input.ArrayWithReferenceToSelf = [input];
 
-        ClassRecord classRecord = PayloadReader.ReadExactClassRecord<WithCyclicReferenceInArrayOfT>(Serialize(input));
+        ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
         Assert.Equal(input.Name, classRecord.GetString(nameof(WithCyclicReferenceInArrayOfT.Name)));
         ClassRecord?[] classRecords = classRecord.GetArrayOfClassRecords(nameof(WithCyclicReferenceInArrayOfT.ArrayWithReferenceToSelf))!;
