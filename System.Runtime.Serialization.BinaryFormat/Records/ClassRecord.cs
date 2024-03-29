@@ -119,9 +119,6 @@ public abstract class ClassRecord : SerializationRecord
     /// <inheritdoc cref="GetArrayOfClassRecords(string)"/>
     public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = MaxLength) where T : unmanaged
         => GetMember<ArrayRecord<T>>(memberName)?.ToArray(false, maxLength);
-    /// <inheritdoc cref="GetArrayOfClassRecords(string)"/>
-    public object?[]? GetArrayOfObjects(string memberName, bool allowNulls = true, int maxLength = MaxLength)
-        => GetMember<ArrayRecord<object>>(memberName)?.ToArray(allowNulls, maxLength);
 
     public Array? GetJaggedArray(string memberName, Type expectedArrayType, bool allowNulls = true, int maxLength = MaxLength)
         => GetMember<BinaryArrayRecord>(memberName)?.ToArray(expectedArrayType, allowNulls, maxLength);

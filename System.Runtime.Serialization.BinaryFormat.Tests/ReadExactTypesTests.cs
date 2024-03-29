@@ -340,9 +340,8 @@ public class ReadExactTypesTests : ReadTests
             null
         ];
 
-        using MemoryStream stream = Serialize(input);
-
-        object?[] output = PayloadReader.ReadArrayOfObjects(stream);
+        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        object?[] output = ((ArrayRecord<object>)arrayRecord).ToArray();
 
         Assert.Equal(input, output);
     }
@@ -354,9 +353,8 @@ public class ReadExactTypesTests : ReadTests
     {
         object?[] input = Enumerable.Repeat<object>(null!, nullCount).ToArray();
 
-        using MemoryStream stream = Serialize(input);
-
-        object?[] output = PayloadReader.ReadArrayOfObjects(stream);
+        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        object?[] output = ((ArrayRecord<object>)arrayRecord).ToArray();
 
         Assert.Equal(nullCount, output.Length);
         Assert.All(output, Assert.Null);
@@ -382,8 +380,9 @@ public class ReadExactTypesTests : ReadTests
         };
 
         ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
+        ArrayRecord<object> arrayRecord = (ArrayRecord<object>)classRecord.GetSerializationRecord(nameof(CustomTypeWithArrayOfObjects.Array))!;
 
-        Assert.Equal(input.Array, classRecord.GetArrayOfObjects(nameof(CustomTypeWithArrayOfObjects.Array)));
+        Assert.Equal(input.Array, arrayRecord.ToArray());
     }
 
     [Theory]

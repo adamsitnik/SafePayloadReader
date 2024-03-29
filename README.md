@@ -87,7 +87,6 @@ public class ClassRecord : SerializationRecord
     // Retrieves an array for the provided memberName, with default max length
     public string?[]? GetArrayOfStrings(string memberName, bool allowNulls = true, int maxLength = 64000)
     public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = 64000) where T : unmanaged;
-    public object?[]? GetArrayOfObjects(string memberName, bool allowNulls = true, int maxLength = 64000);
 
     // Retrieves an instance of ClassRecord that describes non-primitive type for the provided memberName
     public ClassRecord? GetClassRecord(string memberName);

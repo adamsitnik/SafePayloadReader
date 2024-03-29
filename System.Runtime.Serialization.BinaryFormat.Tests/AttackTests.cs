@@ -56,9 +56,8 @@ public class AttackTests : ReadTests
         input[0] = "not an array";
         input[1] = input;
 
-        using MemoryStream stream = Serialize(input);
-
-        object?[] output = PayloadReader.ReadArrayOfObjects(stream);
+        ArrayRecord arrayRecord = PayloadReader.ReadArrayRecord(Serialize(input));
+        object?[] output = ((ArrayRecord<object>)arrayRecord).ToArray();
 
         Assert.Equal(input[0], output[0]);
         Assert.Same(input, input[1]);
@@ -82,7 +81,8 @@ public class AttackTests : ReadTests
         ClassRecord classRecord = PayloadReader.ReadClassRecord(Serialize(input));
 
         Assert.Equal(input.Name, classRecord.GetString(nameof(WithCyclicReferenceInArrayOfObjects.Name)));
-        object?[] array = classRecord.GetArrayOfObjects(nameof(WithCyclicReferenceInArrayOfObjects.ArrayWithReferenceToSelf))!;
+        ArrayRecord<object> arrayRecord = (ArrayRecord<object>)classRecord.GetSerializationRecord(nameof(WithCyclicReferenceInArrayOfObjects.ArrayWithReferenceToSelf))!;
+        object?[] array = arrayRecord.ToArray();
         Assert.Same(classRecord, array.Single());
     }
 

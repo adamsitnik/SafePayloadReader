@@ -164,23 +164,6 @@ public static class PayloadReader
     }
 
     /// <summary>
-    /// Reads the provided Binary Format payload that is expected to contain a single dimension array of <seealso cref="object"/>.
-    /// </summary>
-    /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
-    /// <param name="maxLength">Specifies the max length of an array that can be allocated.</param>
-    /// <returns>The deserialized array of <seealso cref="object"/>.</returns>
-    /// <remarks>
-    /// <para>Only primitive types and nulls are deserialized to their raw values.</para>
-    /// <para>For other types that are not arrays, elements are represented as <seealso cref="ClassRecord"/> instances.</para>
-    /// <para>For jagged and multi-dimensional arrays, elements are represented as instances of <seealso cref="ArrayRecord"/>.</para></remarks>
-    /// <inheritdoc cref="Read"/>
-    public static object?[] ReadArrayOfObjects(Stream payload, bool leaveOpen = false, bool allowNulls = true, int maxLength = ArrayRecord.DefaultMaxArrayLength)
-    {
-        var result = (ArrayRecord<object>)Read(payload, leaveOpen);
-        return result.ToArray(allowNulls, maxLength);
-    }
-
-    /// <summary>
     /// Reads the provided Binary Format payload that is expected to contain a single dimension array of any class (or struct) instances.
     /// </summary>
     /// <param name="allowNulls">True to allow for null values, otherwise, false.</param>
