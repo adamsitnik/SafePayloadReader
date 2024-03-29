@@ -1,14 +1,11 @@
 ﻿namespace System.Runtime.Serialization.BinaryFormat;
 
 /// <summary>
-///  Record type.
+/// Record type.
 /// </summary>
 /// <remarks>
-///  <para>
-///   <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/954a0657-b901-4813-9398-4ec732fe8b32">
-///    [MS-NRBF] 2.1.2.1
-///   </see>
-///  </para>
+/// The enumeration does not contain all values supported by the <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/954a0657-b901-4813-9398-4ec732fe8b32">
+///    [MS-NRBF] 2.1.2.1</see>, but only those supported by the <seealso cref="PayloadReader"/>.
 /// </remarks>
 public enum RecordType : byte
 {
@@ -29,21 +26,5 @@ public enum RecordType : byte
     ObjectNullMultiple,
     ArraySinglePrimitive,
     ArraySingleObject,
-    ArraySingleString,
-
-    CrossAppDomainMap = 18, // 18~20 are from the reference source but aren't in the OpenSpecs doc
-    CrossAppDomainString = 19,
-    CrossAppDomainAssembly = 20,
-
-    /// <summary>
-    ///  Used for remote method invocation. <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/4c727b2f-2c30-468d-b12e-b56406f14862">
-    ///  [MS-NRBF] 2.2</see>
-    /// </summary>
-    MethodCall = 21,
-
-    /// <summary>
-    ///  Used for remote method invocation. <see href="https://learn.microsoft.com/openspecs/windows_protocols/ms-nrbf/4c727b2f-2c30-468d-b12e-b56406f14862">
-    ///  [MS-NRBF] 2.2</see>
-    /// </summary>
-    MethodReturn = 22
+    ArraySingleString
 }

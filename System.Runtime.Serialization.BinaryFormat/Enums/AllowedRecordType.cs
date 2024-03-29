@@ -22,11 +22,6 @@ internal enum AllowedRecordTypes : uint
     ArraySinglePrimitive = 1 << RecordType.ArraySinglePrimitive,
     ArraySingleObject = 1 << RecordType.ArraySingleObject,
     ArraySingleString = 1 << RecordType.ArraySingleString,
-    CrossAppDomainMap = 1 << RecordType.CrossAppDomainMap,
-    CrossAppDomainString = 1 << RecordType.CrossAppDomainString,
-    CrossAppDomainAssembly = 1 << RecordType.CrossAppDomainAssembly,
-    MethodCall = 1 << RecordType.MethodCall,
-    MethodReturn = 1 << RecordType.MethodReturn,
 
     Nulls = ObjectNull | ObjectNullMultiple256 | ObjectNullMultiple,
 

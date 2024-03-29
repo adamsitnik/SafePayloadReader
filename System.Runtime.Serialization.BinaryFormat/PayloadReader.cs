@@ -232,6 +232,15 @@ public static class PayloadReader
             throw new SerializationException($"Unexpected type seen: {recordType}.");
         }
 
+        // Following values are not part of the public API surface, as they are not supported
+        // and users don't need to handle these values.
+        // 18~20 are from the reference source but aren't in the OpenSpecs doc
+        const RecordType CrossAppDomainMap = (RecordType)18;
+        const RecordType CrossAppDomainString = (RecordType)19;
+        const RecordType CrossAppDomainAssembly = (RecordType)20;
+        const RecordType MethodCall = (RecordType)21;
+        const RecordType MethodReturn = (RecordType)22;
+
         SerializationRecord record = recordType switch
         {
             RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader),
@@ -252,9 +261,9 @@ public static class PayloadReader
             RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
             RecordType.SystemClassWithMembers => SystemClassWithMembersRecord.Parse(reader),
             RecordType.SystemClassWithMembersAndTypes => SystemClassWithMembersAndTypesRecord.Parse(reader),
-            RecordType.CrossAppDomainAssembly or RecordType.CrossAppDomainMap or RecordType.CrossAppDomainString
+            CrossAppDomainAssembly or CrossAppDomainMap or CrossAppDomainString
                 => throw new NotSupportedException("Cross domain is not supported by design"),
-            RecordType.MethodCall or RecordType.MethodReturn
+            MethodCall or MethodReturn
                 => throw new NotSupportedException("Remote invocation is not supported by design"),
             _ => throw new SerializationException($"Invalid RecordType value: {recordType}")
         };
