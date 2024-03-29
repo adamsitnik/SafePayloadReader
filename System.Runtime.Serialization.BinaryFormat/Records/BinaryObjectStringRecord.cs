@@ -14,23 +14,16 @@ namespace System.Runtime.Serialization.BinaryFormat;
 ///  </para>
 /// </remarks>
 [DebuggerDisplay("{Value}, {ObjectId}")]
-internal sealed class BinaryObjectStringRecord : SerializationRecord
+internal sealed class BinaryObjectStringRecord : PrimitiveTypeRecord<string>
 {
-    private BinaryObjectStringRecord(int objectId, string value)
+    private BinaryObjectStringRecord(int objectId, string value) : base(value)
     {
         ObjectId = objectId;
-        Value = value;
     }
 
     public override RecordType RecordType => RecordType.BinaryObjectString;
 
     internal override int ObjectId { get; }
-
-    internal string Value { get; }
-
-    public override bool IsTypeNameMatching(Type type) => type == typeof(string);
-
-    internal override object GetValue() => Value;
 
     internal static BinaryObjectStringRecord Parse(BinaryReader reader)
         => new(reader.ReadInt32(), reader.ReadString());

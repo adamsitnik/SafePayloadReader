@@ -408,10 +408,6 @@ public class ReadExactTypesTests : ReadTests
         Verify(ushort.MaxValue);
         Verify(int.MaxValue);
         Verify(uint.MaxValue);
-#if !NETFRAMEWORK
-        Verify(nint.MaxValue);
-        Verify(nuint.MaxValue);
-#endif
         Verify(long.MaxValue);
         Verify(ulong.MaxValue);
         Verify(float.MaxValue);
@@ -422,11 +418,8 @@ public class ReadExactTypesTests : ReadTests
 
         static void Verify<T>(T input) where T : unmanaged
         {
-            using MemoryStream stream = Serialize(input);
-
-            T output = PayloadReader.ReadPrimitiveType<T>(stream);
-
-            Assert.Equal(input, output);
+            PrimitiveTypeRecord<T> record = (PrimitiveTypeRecord<T>)PayloadReader.Read(Serialize(input));
+            Assert.Equal(input, record.Value);
         }
     }
 

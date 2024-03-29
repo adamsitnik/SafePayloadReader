@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 
@@ -68,7 +69,9 @@ public static class PayloadReader
     /// <param name="payload">The Binary Format payload.</param>
     /// <param name="leaveOpen">True to leave the <paramref name="payload"/> payload open
     /// after the reading is finished, otherwise, false.</param>
-    /// <returns>A <seealso cref="SerializationRecord"/> that represents the root object.</returns>
+    /// <returns>A <seealso cref="SerializationRecord"/> that represents the root object.
+    /// It can be either <seealso cref="PrimitiveTypeRecord{T}"/>,
+    /// a <seealso cref="ClassRecord"/> or an <seealso cref="ArrayRecord"/>.</returns>
     /// <exception cref="ArgumentNullException">When <paramref name="payload"/> is null.</exception>
     /// <exception cref="ArgumentException">The <paramref name="payload"/> payload does not support reading or is already closed.</exception>
     /// <exception cref="SerializationException">When reading input from <paramref name="payload"/> encounters invalid Binary Format data.</exception>
@@ -104,17 +107,8 @@ public static class PayloadReader
     {
         ThrowForUnsupportedPrimitiveType<T>();
 
-        var result = (SystemClassWithMembersAndTypesRecord)Read(payload, leaveOpen);
-        if (!result.IsTypeNameMatching(typeof(T)))
-        {
-            ThrowHelper.ThrowTypeMismatch(expected: typeof(T));
-        }
-        else if (SystemClassWithMembersAndTypesRecord.CanBeMappedToPrimitive<T>())
-        {
-            return result.GetValue<T>();
-        }
-
-        return (T)result.MemberValues[0]!;
+        var result = (PrimitiveTypeRecord<T>)Read(payload, leaveOpen);
+        return result.Value;
     }
 
     /// <summary>
@@ -219,7 +213,7 @@ public static class PayloadReader
             PushFirstNestedRecordInfo(nextRecord, readStack);
         } while (recordType != RecordType.MessageEnd);
 
-        return recordMap[header.RootId];
+        return MapToUserFriendly(recordMap[header.RootId]);
     }
 
     private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap, 
@@ -252,7 +246,7 @@ public static class PayloadReader
             RecordType.ClassWithId => ClassWithIdRecord.Parse(reader, recordMap),
             RecordType.ClassWithMembers => ClassWithMembersRecord.Parse(reader, recordMap),
             RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
-            RecordType.MemberPrimitiveTyped => MemberPrimitiveTypedRecord.Parse(reader),
+            RecordType.MemberPrimitiveTyped => ParseMemberPrimitiveTypedRecord(reader),
             RecordType.MemberReference => MemberReferenceRecord.Parse(reader, recordMap),
             RecordType.MessageEnd => MessageEndRecord.Singleton,
             RecordType.ObjectNull => ObjectNullRecord.Instance,
@@ -271,6 +265,32 @@ public static class PayloadReader
         recordMap.Add(record);
 
         return record;
+    }
+
+    private static SerializationRecord ParseMemberPrimitiveTypedRecord(BinaryReader reader)
+    {
+        PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
+
+        return primitiveType switch
+        {
+            PrimitiveType.Boolean => new MemberPrimitiveTypedRecord<bool>(reader.ReadBoolean()),
+            PrimitiveType.Byte => new MemberPrimitiveTypedRecord<byte>(reader.ReadByte()),
+            PrimitiveType.SByte => new MemberPrimitiveTypedRecord<sbyte>(reader.ReadSByte()),
+            PrimitiveType.Char => new MemberPrimitiveTypedRecord<char>(reader.ReadChar()),
+            PrimitiveType.Int16 => new MemberPrimitiveTypedRecord<short>(reader.ReadInt16()),
+            PrimitiveType.UInt16 => new MemberPrimitiveTypedRecord<ushort>(reader.ReadUInt16()),
+            PrimitiveType.Int32 => new MemberPrimitiveTypedRecord<int>(reader.ReadInt32()),
+            PrimitiveType.UInt32 => new MemberPrimitiveTypedRecord<uint>(reader.ReadUInt32()),
+            PrimitiveType.Int64 => new MemberPrimitiveTypedRecord<long>(reader.ReadInt64()),
+            PrimitiveType.UInt64 => new MemberPrimitiveTypedRecord<ulong>(reader.ReadUInt64()),
+            PrimitiveType.Single => new MemberPrimitiveTypedRecord<float>(reader.ReadSingle()),
+            PrimitiveType.Double => new MemberPrimitiveTypedRecord<double>(reader.ReadDouble()),
+            PrimitiveType.Decimal => new MemberPrimitiveTypedRecord<decimal>(decimal.Parse(reader.ReadString(), CultureInfo.InvariantCulture)),
+            PrimitiveType.DateTime => new MemberPrimitiveTypedRecord<DateTime>(BinaryReaderExtensions.CreateDateTimeFromData(reader.ReadInt64())),
+            PrimitiveType.TimeSpan => new MemberPrimitiveTypedRecord<TimeSpan>(new TimeSpan(reader.ReadInt64())),
+            // String is handled with a record, never on it's own
+            _ => throw new SerializationException($"Failure trying to read primitive '{primitiveType}'"),
+        };
     }
 
     /// <summary>
@@ -316,4 +336,9 @@ public static class PayloadReader
             throw new NotSupportedException($"Type {typeof(T)} is not supported by the Binary Format.");
         }
     }
+
+    private static SerializationRecord MapToUserFriendly(SerializationRecord serializationRecord)
+        => serializationRecord is SystemClassWithMembersAndTypesRecord systemClass
+            ? systemClass.TryToMapToUserFriendly()
+            : serializationRecord;
 }

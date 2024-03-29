@@ -52,5 +52,90 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             static ClassRecord Find(ClassRecord[] keyValuePairs, string key)
                 => keyValuePairs.Where(pair => pair.GetString("key") == key).Single();
         }
+
+        public static IEnumerable<object[]> GetAllInputTypes()
+        {
+            yield return new object[] { "string" };
+            yield return new object[] { true };
+            yield return new object[] { byte.MaxValue };
+            yield return new object[] { sbyte.MaxValue };
+            yield return new object[] { short.MaxValue };
+            yield return new object[] { ushort.MaxValue };
+            yield return new object[] { int.MaxValue };
+            yield return new object[] { uint.MaxValue };
+            yield return new object[] { long.MaxValue };
+            yield return new object[] { ulong.MaxValue };
+            yield return new object[] { float.MaxValue };
+            yield return new object[] { double.MaxValue };
+            yield return new object[] { decimal.MaxValue };
+            yield return new object[] { TimeSpan.MaxValue };
+            yield return new object[] { new DateTime(2000, 01, 01) };
+            yield return new object[] { new Exception("SystemType") };
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllInputTypes))]
+        public void UserCanReadEveryPossibleSerializationRecord(object input)
+        {
+            SerializationRecord root = PayloadReader.Read(Serialize(input));
+
+            switch(root)
+            {
+                case PrimitiveTypeRecord<string> stringRecord:
+                    Assert.Equal(input, stringRecord.Value);
+                    break;
+                case PrimitiveTypeRecord<bool> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<byte> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<sbyte> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<char> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<short> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<ushort> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<int> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<uint> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<long> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<ulong> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<float> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<double> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<decimal> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<DateTime> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case PrimitiveTypeRecord<TimeSpan> record:
+                    Assert.Equal(input, record.Value);
+                    break;
+                case ClassRecord record when record.IsTypeNameMatching(typeof(Exception)):
+                    Assert.Equal(((Exception)input).Message, record.GetString("Message"));
+                    break;
+                default:
+                    Assert.Fail($"All cases should be handled! Record was {root.GetType()}, input was {input.GetType()}");
+                    break;
+            }
+        }
     }
 }

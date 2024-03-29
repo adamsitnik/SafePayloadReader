@@ -2,6 +2,13 @@
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
+/// <summary>
+/// Abstract class that represents the serialization record.
+/// </summary>
+/// <remarks>
+/// Every instance returned to the end user can be either <seealso cref="PrimitiveTypeRecord{T}"/>,
+/// a <seealso cref="ClassRecord"/> or an <seealso cref="ArrayRecord"/>.
+/// </remarks>
 [DebuggerDisplay("{RecordType}, {ObjectId}")]
 public abstract class SerializationRecord
 {
