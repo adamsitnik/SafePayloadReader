@@ -75,9 +75,11 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = PayloadReader.ReadExactClassRecord<CustomTypeWithStringField>(stream);
 
+        Assert.True(classRecord.HasMember(nameof(CustomTypeWithStringField.Text)));
         Assert.Equal(input.Text, classRecord.GetString(nameof(CustomTypeWithStringField.Text)));
         Assert.Equal(typeof(CustomTypeWithStringField).FullName, classRecord.TypeName);
         Assert.Equal(typeof(CustomTypeWithStringField).Assembly.FullName, classRecord.LibraryName);
+        Assert.False(classRecord.HasMember("NotPresent"));
     }
 
     [Serializable]
@@ -239,9 +241,11 @@ public class ReadExactTypesTests : ReadTests
 
         ClassRecord classRecord = PayloadReader.ReadExactClassRecord<Exception>(Serialize(input));
 
+        Assert.True(classRecord.HasMember(nameof(Exception.Message)));
         Assert.Equal(input.Message, classRecord.GetString(nameof(Exception.Message)));
         Assert.Equal(typeof(Exception).FullName, classRecord.TypeName);
         Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.LibraryName);
+        Assert.False(classRecord.HasMember("NotPresent"));
     }
 
     [Fact]

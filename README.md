@@ -61,6 +61,9 @@ public class ClassRecord : SerializationRecord
     public string TypeName { get; }
     public string LibraryName { get; }
     public IEnumerable<string> MemberNames { get; }
+
+    // Checks if member of given name was present in the payload (useful for versioning scenarios)
+    public bool HasMember(string memberName);
     
     // Retrieves the value of the provided memberName
     public string? GetString(string memberName);

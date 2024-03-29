@@ -40,6 +40,17 @@ public abstract class ClassRecord : SerializationRecord
     internal List<object?> MemberValues { get; }
 
     /// <summary>
+    /// Checks if member of given name was present in the payload.
+    /// </summary>
+    /// <param name="memberName">The name of the field.</param>
+    /// <returns>True if it was present, otherwise false.</returns>
+    /// <remarks>
+    /// It's recommended to use this method when dealing with payload that may contain
+    /// different versions of the same type.s
+    /// </remarks>
+    public bool HasMember(string memberName) => ClassInfo.MemberNames.ContainsKey(memberName);
+
+    /// <summary>
     /// Retrieves the value of the provided <paramref name="memberName"/>.
     /// </summary>
     /// <param name="memberName">The name of the field.</param>
