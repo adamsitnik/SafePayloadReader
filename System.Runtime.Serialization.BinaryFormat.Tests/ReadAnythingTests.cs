@@ -71,6 +71,22 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             yield return new object[] { TimeSpan.MaxValue };
             yield return new object[] { new DateTime(2000, 01, 01) };
             yield return new object[] { new Exception("SystemType") };
+            yield return new object[] { new[] { "string" } };
+            yield return new object[] { new [] { true} };
+            yield return new object[] { new [] { byte.MaxValue} };
+            yield return new object[] { new [] { sbyte.MaxValue} };
+            yield return new object[] { new [] { short.MaxValue} };
+            yield return new object[] { new [] { ushort.MaxValue} };
+            yield return new object[] { new [] { int.MaxValue} };
+            yield return new object[] { new [] { uint.MaxValue} };
+            yield return new object[] { new [] { long.MaxValue} };
+            yield return new object[] { new [] { ulong.MaxValue} };
+            yield return new object[] { new [] { float.MaxValue} };
+            yield return new object[] { new [] { double.MaxValue} };
+            yield return new object[] { new [] { decimal.MaxValue} };
+            yield return new object[] { new [] { TimeSpan.MaxValue} };
+            yield return new object[] { new [] { new DateTime(2000, 01, 01)} };
+            yield return new object[] { new [] { new Exception("SystemType")} };
         }
 
         [Theory]
@@ -81,8 +97,9 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
 
             switch(root)
             {
-                case PrimitiveTypeRecord<string> stringRecord:
-                    Assert.Equal(input, stringRecord.Value);
+                // primitive types
+                case PrimitiveTypeRecord<string> record:
+                    Assert.Equal(input, record.Value);
                     break;
                 case PrimitiveTypeRecord<bool> record:
                     Assert.Equal(input, record.Value);
@@ -129,8 +146,61 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
                 case PrimitiveTypeRecord<TimeSpan> record:
                     Assert.Equal(input, record.Value);
                     break;
+                // arrays of primitive types
+                case ArrayRecord<string> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<bool> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<byte> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<sbyte> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<char> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<short> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<ushort> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<int> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<uint> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<long> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<ulong> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<float> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<double> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<decimal> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<DateTime> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                case ArrayRecord<TimeSpan> record:
+                    Assert.Equal(input, record.ToArray());
+                    break;
+                // class records
                 case ClassRecord record when record.IsTypeNameMatching(typeof(Exception)):
                     Assert.Equal(((Exception)input).Message, record.GetString("Message"));
+                    break;
+                case ArrayRecord<ClassRecord> record when record.IsTypeNameMatching(typeof(Exception[])):
+                    Assert.Equal(((Exception[])input)[0].Message, record.ToArray()[0]!.GetString("Message"));
                     break;
                 default:
                     Assert.Fail($"All cases should be handled! Record was {root.GetType()}, input was {input.GetType()}");

@@ -35,42 +35,13 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     protected override T[] ToArrayOfT(bool allowNulls) => Values.ToArray();
 
-    internal static ArrayRecord Parse(BinaryReader reader)
-    {
-        ArrayInfo info = ArrayInfo.Parse(reader);
-        PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
-
-        int length = (int)info.Length;
-
-        return primitiveType switch
-        {
-            PrimitiveType.Boolean => new ArraySinglePrimitiveRecord<bool>(info, ReadPrimitiveTypes<bool>(reader, length)),
-            PrimitiveType.Byte => new ArraySinglePrimitiveRecord<byte>(info, ReadPrimitiveTypes<byte>(reader, length)),
-            PrimitiveType.SByte => new ArraySinglePrimitiveRecord<sbyte>(info, ReadPrimitiveTypes<sbyte>(reader, length)),
-            PrimitiveType.Char => new ArraySinglePrimitiveRecord<char>(info, ReadPrimitiveTypes<char>(reader, length)),
-            PrimitiveType.Int16 => new ArraySinglePrimitiveRecord<short>(info, ReadPrimitiveTypes<short>(reader, length)),
-            PrimitiveType.UInt16 => new ArraySinglePrimitiveRecord<ushort>(info, ReadPrimitiveTypes<ushort>(reader, length)),
-            PrimitiveType.Int32 => new ArraySinglePrimitiveRecord<int>(info, ReadPrimitiveTypes<int>(reader, length)),
-            PrimitiveType.UInt32 => new ArraySinglePrimitiveRecord<uint>(info, ReadPrimitiveTypes<uint>(reader, length)),
-            PrimitiveType.Int64 => new ArraySinglePrimitiveRecord<long>(info, ReadPrimitiveTypes<long>(reader, length)),
-            PrimitiveType.UInt64 => new ArraySinglePrimitiveRecord<ulong>(info, ReadPrimitiveTypes<ulong>(reader, length)),
-            PrimitiveType.Single => new ArraySinglePrimitiveRecord<float>(info, ReadPrimitiveTypes<float>(reader, length)),
-            PrimitiveType.Double => new ArraySinglePrimitiveRecord<double>(info, ReadPrimitiveTypes<double>(reader, length)),
-            PrimitiveType.Decimal => new ArraySinglePrimitiveRecord<decimal>(info, ReadPrimitiveTypes<decimal>(reader, length)),
-            PrimitiveType.DateTime => new ArraySinglePrimitiveRecord<DateTime>(info, ReadPrimitiveTypes<DateTime>(reader, length)),
-            PrimitiveType.TimeSpan => new ArraySinglePrimitiveRecord<TimeSpan>(info, ReadPrimitiveTypes<TimeSpan>(reader, length)),
-            _ => throw new SerializationException($"Failure trying to read primitive '{primitiveType}'"),
-        };
-    }
-
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
         => throw new InvalidOperationException("This should never happen");
 
     private protected override void AddValue(object value)
         => throw new InvalidOperationException("This should never happen");
 
-    private static IReadOnlyList<T> ReadPrimitiveTypes<T>(BinaryReader reader, int count)
-        where T : unmanaged
+    internal static IReadOnlyList<T> ReadPrimitiveTypes(BinaryReader reader, int count)
     {
         if (typeof(T) == typeof(byte))
         {

@@ -39,8 +39,10 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
     // to get a single primitive value!
     internal SerializationRecord TryToMapToUserFriendly()
     {
-        // it could be implemented with way fewer ifs, but perf is important
-        if (MemberValues.Count == 1)
+        // It could be implemented with way fewer ifs, but perf is important
+        // and we want to bail out as soon as possible, but also don't convert something
+        // that is not an exact match.
+        if (MemberValues.Count == 1 && HasMember("m_value"))
         {
             return MemberValues[0] switch
             {
@@ -54,12 +56,16 @@ internal sealed class SystemClassWithMembersAndTypesRecord : ClassRecord
                 int value when IsTypeNameMatching(typeof(int)) => Create(value),
                 uint value when IsTypeNameMatching(typeof(uint)) => Create(value),
                 long value when IsTypeNameMatching(typeof(long)) => Create(value),
-                long value when IsTypeNameMatching(typeof(TimeSpan)) => Create(new TimeSpan(value)),
                 ulong value when IsTypeNameMatching(typeof(ulong)) => Create(value),
                 float value when IsTypeNameMatching(typeof(float)) => Create(value),
                 double value when IsTypeNameMatching(typeof(double)) => Create(value),
                 _ => this
             };
+        }
+        else if (MemberValues.Count == 1 && HasMember("_ticks") && MemberValues[0] is long ticks
+            && IsTypeNameMatching(typeof(TimeSpan)))
+        {
+            return Create(new TimeSpan(ticks));
         }
         else if (MemberValues.Count == 2
             && HasMember("ticks") && HasMember("dateData")

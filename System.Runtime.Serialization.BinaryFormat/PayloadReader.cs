@@ -238,7 +238,7 @@ public static class PayloadReader
         SerializationRecord record = recordType switch
         {
             RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader),
-            RecordType.ArraySinglePrimitive => ArraySinglePrimitiveRecord<int>.Parse(reader),
+            RecordType.ArraySinglePrimitive => ParseArraySinglePrimitiveRecord(reader),
             RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader),
             RecordType.BinaryArray => BinaryArrayRecord.Parse(reader, recordMap),
             RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
@@ -291,6 +291,35 @@ public static class PayloadReader
             // String is handled with a record, never on it's own
             _ => throw new SerializationException($"Failure trying to read primitive '{primitiveType}'"),
         };
+    }
+
+    private static SerializationRecord ParseArraySinglePrimitiveRecord(BinaryReader reader)
+    {
+        ArrayInfo info = ArrayInfo.Parse(reader);
+        PrimitiveType primitiveType = (PrimitiveType)reader.ReadByte();
+
+        return primitiveType switch
+        {
+            PrimitiveType.Boolean => Read<bool>(info, reader),
+            PrimitiveType.Byte => Read<byte>(info, reader),
+            PrimitiveType.SByte => Read<sbyte>(info, reader),
+            PrimitiveType.Char => Read<char>(info, reader),
+            PrimitiveType.Int16 => Read<short>(info, reader),
+            PrimitiveType.UInt16 => Read<ushort>(info, reader),
+            PrimitiveType.Int32 => Read<int>(info, reader),
+            PrimitiveType.UInt32 => Read<uint>(info, reader),
+            PrimitiveType.Int64 => Read<long>(info, reader),
+            PrimitiveType.UInt64 => Read<ulong>(info, reader),
+            PrimitiveType.Single => Read<float>(info, reader),
+            PrimitiveType.Double => Read<double>(info, reader),
+            PrimitiveType.Decimal => Read<decimal>(info, reader),
+            PrimitiveType.DateTime => Read<DateTime>(info, reader),
+            PrimitiveType.TimeSpan => Read<TimeSpan>(info, reader),
+            _ => throw new SerializationException($"Failure trying to read primitive '{primitiveType}'"),
+        };
+
+        static SerializationRecord Read<T>(ArrayInfo info, BinaryReader reader) where T : unmanaged
+            => new ArraySinglePrimitiveRecord<T>(info, ArraySinglePrimitiveRecord<T>.ReadPrimitiveTypes(reader, (int)info.Length));
     }
 
     /// <summary>
