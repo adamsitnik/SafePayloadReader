@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -20,17 +21,17 @@ internal sealed class SystemClassWithMembersRecord : ClassRecord
 
     public override RecordType RecordType => RecordType.SystemClassWithMembers;
 
-    public override string LibraryName => FormatterServices.CoreLibAssemblyName;
+    public override AssemblyNameInfo LibraryName => FormatterServices.CoreLibAssemblyName;
 
     internal override int ExpectedValuesCount => ClassInfo.MemberNames.Count;
 
     public override bool IsTypeNameMatching(Type type)
         => type.Assembly == typeof(object).Assembly
-        && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name;
+        && FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name.FullName;
 
-    internal static SystemClassWithMembersRecord Parse(BinaryReader reader)
+    internal static SystemClassWithMembersRecord Parse(BinaryReader reader, PayloadOptions options)
     {
-        ClassInfo classInfo = ClassInfo.Parse(reader);
+        ClassInfo classInfo = ClassInfo.Parse(reader, options);
         // the only difference with ClassWithMembersRecord is that we don't read library id here
         return new(classInfo);
     }

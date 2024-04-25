@@ -89,4 +89,91 @@ public class InvalidInputTests : ReadTests
         stream.Position = 0;
         Assert.Throws<SerializationException>(() => ((ArrayRecord<string>)PayloadReader.Read(stream)).ToArray());
     }
+
+    [Theory]
+    [InlineData("TypeName, Hacked.dll")] // assembly names are NOT allowed
+    [InlineData("InvalidTypeName[]]")] // invalid type name
+    public void ThrowsWhenTypeNameIsInvalid(string typeName)
+    {
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
+
+        WriteSerializedStreamHeader(writer);
+
+        writer.Write((byte)RecordType.SystemClassWithMembersAndTypes);
+        writer.Write(1); // class Id
+        writer.Write(typeName);
+        writer.Write(0); // member count
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+        Assert.Throws<SerializationException>(() => PayloadReader.Read(stream));
+    }
+
+    [Theory]
+    [InlineData("TypeName, Hacked.dll")] // assembly names are NOT allowed
+    [InlineData("InvalidTypeName[]]")] // invalid type name
+    public void ThrowsWhenMemberTypeNameIsInvalid_BinaryTypeSystemClass(string typeName)
+    {
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
+
+        WriteSerializedStreamHeader(writer);
+
+        writer.Write((byte)RecordType.SystemClassWithMembersAndTypes);
+        writer.Write(1); // class Id
+        writer.Write("ValidTypeName");
+        writer.Write(1); // member count
+
+        // The Member
+        writer.Write(3); // BinaryType.SystemClass
+        writer.Write(typeName);
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+        Assert.Throws<SerializationException>(() => PayloadReader.Read(stream));
+    }
+
+
+    [Theory]
+    [InlineData("TypeName, Hacked.dll")] // assembly names are NOT allowed
+    [InlineData("InvalidTypeName[]]")] // invalid type name
+    public void ThrowsWhenMemberTypeNameIsInvalid_BinaryTypeClass(string typeName)
+    {
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
+
+        WriteSerializedStreamHeader(writer);
+
+        writer.Write((byte)RecordType.SystemClassWithMembersAndTypes);
+        writer.Write(1); // class Id
+        writer.Write("ValidTypeName");
+        writer.Write(1); // member count
+
+        // The Member
+        writer.Write(4); // BinaryType.Class (the difference!)
+        writer.Write(typeName); // type name
+        writer.Write(10); // class id
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+        Assert.Throws<SerializationException>(() => PayloadReader.Read(stream));
+    }
+
+    [Fact]
+    public void ThrowsWhenLibraryNameIsInvalid()
+    {
+        using MemoryStream stream = new();
+        BinaryWriter writer = new(stream, Encoding.UTF8);
+
+        WriteSerializedStreamHeader(writer);
+
+        writer.Write((byte)RecordType.BinaryLibrary);
+        writer.Write(1); // library Id
+        writer.Write("Esc\\[aped"); // library name
+        writer.Write((byte)RecordType.MessageEnd);
+
+        stream.Position = 0;
+        Assert.Throws<SerializationException>(() => PayloadReader.Read(stream));
+    }
 }

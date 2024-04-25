@@ -67,6 +67,7 @@ public static class PayloadReader
     /// Reads the provided Binary Format payload.
     /// </summary>
     /// <param name="payload">The Binary Format payload.</param>
+    /// <param name="options">An object that describes optional <seealso cref="PayloadOptions"/> parameters to use.</param>
     /// <param name="leaveOpen">True to leave the <paramref name="payload"/> payload open
     /// after the reading is finished, otherwise, false.</param>
     /// <returns>A <seealso cref="SerializationRecord"/> that represents the root object.
@@ -77,12 +78,12 @@ public static class PayloadReader
     /// <exception cref="SerializationException">When reading input from <paramref name="payload"/> encounters invalid Binary Format data.</exception>
     /// <exception cref="DecoderFallbackException">When reading input from <paramref name="payload"/>
     /// encounters invalid sequence of UTF8 characters.</exception>
-    public static SerializationRecord Read(Stream payload, bool leaveOpen = false)
+    public static SerializationRecord Read(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
     {
         if (payload is null) throw new ArgumentNullException(nameof(payload));
 
         using BinaryReader reader = new(payload, ThrowOnInvalidUtf8Encoding, leaveOpen: leaveOpen);
-        return Read(reader);
+        return Read(reader, options ?? new());
     }
 
     /// <summary>
@@ -90,16 +91,16 @@ public static class PayloadReader
     /// </summary>
     /// <returns>A <seealso cref="ClassRecord"/> that represents the root object.</returns>
     /// <inheritdoc cref="Read"/>
-    public static ClassRecord ReadClassRecord(Stream payload, bool leaveOpen = false)
-        => (ClassRecord)Read(payload, leaveOpen);
+    public static ClassRecord ReadClassRecord(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
+        => (ClassRecord)Read(payload, options, leaveOpen);
 
-    private static SerializationRecord Read(BinaryReader reader)
+    private static SerializationRecord Read(BinaryReader reader, PayloadOptions options)
     {
         Stack<NextInfo> readStack = new();
         RecordMap recordMap = new();
 
         // Everything has to start with a header
-        var header = (SerializedStreamHeaderRecord)ReadNext(reader, recordMap, AllowedRecordTypes.SerializedStreamHeader, out _);
+        var header = (SerializedStreamHeaderRecord)ReadNext(reader, recordMap, AllowedRecordTypes.SerializedStreamHeader, options, out _);
         // and can be followed by any Object, BinaryLibrary and a MessageEnd.
         const AllowedRecordTypes allowed = AllowedRecordTypes.AnyObject
             | AllowedRecordTypes.BinaryLibrary | AllowedRecordTypes.MessageEnd;
@@ -115,7 +116,7 @@ public static class PayloadReader
                 if (nextInfo.Allowed != AllowedRecordTypes.None) 
                 {
                     // Read the next Record.
-                    nextRecord = ReadNext(reader, recordMap, nextInfo.Allowed, out _);
+                    nextRecord = ReadNext(reader, recordMap, nextInfo.Allowed, options, out _);
                     // Handle it:
                     // - add to the parent records list,
                     // - push next info if there are remaining nested records to read.
@@ -132,7 +133,7 @@ public static class PayloadReader
                 }
             }
 
-            nextRecord = ReadNext(reader, recordMap, allowed, out recordType);
+            nextRecord = ReadNext(reader, recordMap, allowed, options, out recordType);
             PushFirstNestedRecordInfo(nextRecord, readStack);
         } while (recordType != RecordType.MessageEnd);
 
@@ -143,7 +144,7 @@ public static class PayloadReader
     }
 
     private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap, 
-        AllowedRecordTypes allowed, out RecordType recordType)
+        AllowedRecordTypes allowed, PayloadOptions options, out RecordType recordType)
     {
         recordType = (RecordType)reader.ReadByte();
 
@@ -166,12 +167,12 @@ public static class PayloadReader
             RecordType.ArraySingleObject => ArraySingleObjectRecord.Parse(reader),
             RecordType.ArraySinglePrimitive => ParseArraySinglePrimitiveRecord(reader),
             RecordType.ArraySingleString => ArraySingleStringRecord.Parse(reader),
-            RecordType.BinaryArray => BinaryArrayRecord.Parse(reader, recordMap),
+            RecordType.BinaryArray => BinaryArrayRecord.Parse(reader, recordMap, options),
             RecordType.BinaryLibrary => BinaryLibraryRecord.Parse(reader),
             RecordType.BinaryObjectString => BinaryObjectStringRecord.Parse(reader),
             RecordType.ClassWithId => ClassWithIdRecord.Parse(reader, recordMap),
-            RecordType.ClassWithMembers => ClassWithMembersRecord.Parse(reader, recordMap),
-            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap),
+            RecordType.ClassWithMembers => ClassWithMembersRecord.Parse(reader, recordMap, options),
+            RecordType.ClassWithMembersAndTypes => ClassWithMembersAndTypesRecord.Parse(reader, recordMap, options),
             RecordType.MemberPrimitiveTyped => ParseMemberPrimitiveTypedRecord(reader),
             RecordType.MemberReference => MemberReferenceRecord.Parse(reader, recordMap),
             RecordType.MessageEnd => MessageEndRecord.Singleton,
@@ -179,8 +180,8 @@ public static class PayloadReader
             RecordType.ObjectNullMultiple => ObjectNullMultipleRecord.Parse(reader),
             RecordType.ObjectNullMultiple256 => ObjectNullMultiple256Record.Parse(reader),
             RecordType.SerializedStreamHeader => SerializedStreamHeaderRecord.Parse(reader),
-            RecordType.SystemClassWithMembers => SystemClassWithMembersRecord.Parse(reader),
-            RecordType.SystemClassWithMembersAndTypes => SystemClassWithMembersAndTypesRecord.Parse(reader),
+            RecordType.SystemClassWithMembers => SystemClassWithMembersRecord.Parse(reader, options),
+            RecordType.SystemClassWithMembersAndTypes => SystemClassWithMembersAndTypesRecord.Parse(reader, options),
             CrossAppDomainAssembly or CrossAppDomainMap or CrossAppDomainString
                 => throw new NotSupportedException("Cross domain is not supported by design"),
             MethodCall or MethodReturn

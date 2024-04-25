@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.IO;
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -57,5 +58,29 @@ internal static class BinaryReaderExtensions
         }
 
         return Unsafe.As<long, DateTime>(ref data);
+    }
+
+    internal static TypeName ReadTypeName(this BinaryReader binaryReader, PayloadOptions options)
+    {
+        string name = binaryReader.ReadString();
+        if (!TypeName.TryParse(name.AsSpan(), out TypeName? typeName, options.TypeNameParseOptions))
+        {
+            throw new SerializationException($"Invalid type name: '{name}'");
+        }
+        else if (typeName.AssemblyName is not null)
+        {
+            throw new SerializationException("Type names must not contain assembly names");
+        }
+        return typeName;
+    }
+
+    internal static AssemblyNameInfo ReadLibraryName(this BinaryReader binaryReader)
+    {
+        string name = binaryReader.ReadString();
+        if (!AssemblyNameInfo.TryParse(name.AsSpan(), out AssemblyNameInfo? libraryName))
+        {
+            throw new SerializationException($"Invalid library name: '{name}'");
+        }
+        return libraryName;
     }
 }

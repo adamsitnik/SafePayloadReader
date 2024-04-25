@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -16,17 +17,16 @@ namespace System.Runtime.Serialization.BinaryFormat;
 [DebuggerDisplay("{TypeName}")]
 internal sealed class ClassTypeInfo
 {
-    internal ClassTypeInfo(string typeName, int libraryId)
+    internal ClassTypeInfo(TypeName typeName, int libraryId)
     {
         TypeName = typeName;
         LibraryId = libraryId;
     }
 
-    internal string TypeName { get; }
+    internal TypeName TypeName { get; }
 
     internal int LibraryId { get; }
 
-    internal static ClassTypeInfo Parse(BinaryReader reader) => new(
-        reader.ReadString(),
-        reader.ReadInt32());
+    internal static ClassTypeInfo Parse(BinaryReader reader, PayloadOptions options)
+        => new(reader.ReadTypeName(options), reader.ReadInt32());
 }

@@ -77,8 +77,8 @@ public class ReadExactTypesTests : ReadTests
 
         Assert.True(classRecord.HasMember(nameof(CustomTypeWithStringField.Text)));
         Assert.Equal(input.Text, classRecord.GetString(nameof(CustomTypeWithStringField.Text)));
-        Assert.Equal(typeof(CustomTypeWithStringField).FullName, classRecord.TypeName);
-        Assert.Equal(typeof(CustomTypeWithStringField).Assembly.FullName, classRecord.LibraryName);
+        Assert.Equal(typeof(CustomTypeWithStringField).FullName, classRecord.TypeName.FullName);
+        Assert.Equal(typeof(CustomTypeWithStringField).Assembly.FullName, classRecord.LibraryName.FullName);
         Assert.False(classRecord.HasMember("NotPresent"));
     }
 
@@ -231,8 +231,8 @@ public class ReadExactTypesTests : ReadTests
 
         Assert.True(classRecord.HasMember(nameof(Exception.Message)));
         Assert.Equal(input.Message, classRecord.GetString(nameof(Exception.Message)));
-        Assert.Equal(typeof(Exception).FullName, classRecord.TypeName);
-        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.LibraryName);
+        Assert.Equal(typeof(Exception).FullName, classRecord.TypeName.FullName);
+        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.LibraryName.FullName);
         Assert.False(classRecord.HasMember("NotPresent"));
     }
 

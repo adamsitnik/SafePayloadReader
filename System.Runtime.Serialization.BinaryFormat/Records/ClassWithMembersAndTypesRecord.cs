@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -23,7 +24,7 @@ internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
 
     public override RecordType RecordType => RecordType.ClassWithMembersAndTypes;
 
-    public override string LibraryName => Library.LibraryName;
+    public override AssemblyNameInfo LibraryName => Library.LibraryName;
 
     internal BinaryLibraryRecord Library { get; }
 
@@ -32,13 +33,13 @@ internal sealed class ClassWithMembersAndTypesRecord : ClassRecord
     internal override int ExpectedValuesCount => MemberTypeInfo.Infos.Count;
 
     public override bool IsTypeNameMatching(Type type)
-        => FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name
-        && FormatterServices.GetAssemblyNameIncludingTypeForwards(type) == Library.LibraryName;
+        => FormatterServices.GetTypeFullNameIncludingTypeForwards(type) == ClassInfo.Name.FullName
+        && FormatterServices.GetAssemblyNameIncludingTypeForwards(type) == Library.LibraryName.FullName;
 
-    internal static ClassWithMembersAndTypesRecord Parse(BinaryReader reader, RecordMap recordMap)
+    internal static ClassWithMembersAndTypesRecord Parse(BinaryReader reader, RecordMap recordMap, PayloadOptions options)
     {
-        ClassInfo classInfo = ClassInfo.Parse(reader);
-        MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Count);
+        ClassInfo classInfo = ClassInfo.Parse(reader, options);
+        MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, classInfo.MemberNames.Count, options);
         int libraryId = reader.ReadInt32();
 
         BinaryLibraryRecord library = (BinaryLibraryRecord)recordMap[libraryId];

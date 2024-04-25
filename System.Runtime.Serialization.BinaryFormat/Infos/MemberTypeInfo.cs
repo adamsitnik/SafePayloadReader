@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -19,7 +20,7 @@ internal readonly struct MemberTypeInfo
 
     internal readonly IReadOnlyList<(BinaryType BinaryType, object? AdditionalInfo)> Infos;
 
-    internal static MemberTypeInfo Parse(BinaryReader reader, int count)
+    internal static MemberTypeInfo Parse(BinaryReader reader, int count, PayloadOptions options)
     {
         List<(BinaryType BinaryType, object? AdditionalInfo)> info = new();
 
@@ -44,10 +45,10 @@ internal readonly struct MemberTypeInfo
                     info[i] = (type, (PrimitiveType)reader.ReadByte());
                     break;
                 case BinaryType.SystemClass:
-                    info[i] = (type, reader.ReadString());
+                    info[i] = (type, reader.ReadTypeName(options));
                     break;
                 case BinaryType.Class:
-                    info[i] = (type, ClassTypeInfo.Parse(reader));
+                    info[i] = (type, ClassTypeInfo.Parse(reader, options));
                     break;
                 case BinaryType.String:
                 case BinaryType.ObjectArray:
@@ -150,19 +151,19 @@ internal readonly struct MemberTypeInfo
                 {
                     return false;
                 }
-                string fullTypeName = (string)additionalInfo!;
+                TypeName typeName = (TypeName)additionalInfo!;
                 string fullSystemClassName = FormatterServices.GetTypeFullNameIncludingTypeForwards(typeElement);
-                return fullTypeName == fullSystemClassName;
+                return typeName.FullName == fullSystemClassName;
             case BinaryType.Class:
                 ClassTypeInfo typeInfo = (ClassTypeInfo)additionalInfo!;
                 string fullClassName = FormatterServices.GetTypeFullNameIncludingTypeForwards(typeElement);
-                if (typeInfo.TypeName != fullClassName)
+                if (typeInfo.TypeName.FullName != fullClassName)
                 {
                     return false;
                 }
                 BinaryLibraryRecord libraryRecord = (BinaryLibraryRecord)recordMap[typeInfo.LibraryId];
                 string assemblyName = FormatterServices.GetAssemblyNameIncludingTypeForwards(typeElement);
-                return assemblyName == libraryRecord.LibraryName;
+                return assemblyName == libraryRecord.LibraryName.FullName;
             default:
                 throw new NotSupportedException();
         }
@@ -175,13 +176,11 @@ internal readonly struct MemberTypeInfo
         switch (binaryType)
         {
             case BinaryType.SystemClass:
-                string fullTypeName = (string)additionalInfo!;
-                // TODO: use TypeName here!
-                return !fullTypeName.EndsWith("[]", StringComparison.Ordinal);
+                TypeName typeName = (TypeName)additionalInfo!;
+                return !typeName.IsSZArray;
             case BinaryType.Class:
                 ClassTypeInfo typeInfo = (ClassTypeInfo)additionalInfo!;
-                // TODO: use TypeName here!
-                return !typeInfo.TypeName.EndsWith("[]", StringComparison.Ordinal);
+                return !typeInfo.TypeName.IsSZArray;
             default:
                 return false;
         }

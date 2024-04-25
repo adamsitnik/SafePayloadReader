@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+    <PackageReference Include="System.Reflection.Metadata" Version="9.0.0-preview.4.24225.2" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
   </ItemGroup>
 

@@ -82,7 +82,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord
         return array;
     }
 
-    internal static ArrayRecord Parse(BinaryReader reader, RecordMap recordMap)
+    internal static ArrayRecord Parse(BinaryReader reader, RecordMap recordMap, PayloadOptions options)
     {
         int objectId = reader.ReadInt32();
 
@@ -147,7 +147,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord
             }   
         }
 
-        MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1);
+        MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1, options);
         ArrayInfo arrayInfo = new(objectId, (uint)totalElementCount, arrayType, rank);
 
         if (isRectangular || hasCustomOffset)

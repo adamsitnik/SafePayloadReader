@@ -46,7 +46,7 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
 
         Array result = Array.CreateInstance(ElementType, Lengths, Offsets);
 
-#if NETSTANDARD
+#if !NET8_0_OR_GREATER
         int[] indices = new int[Offsets.Length];
         Offsets.CopyTo(indices, 0); // respect custom offsets
 

@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Reflection.Metadata;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -7,9 +8,9 @@ namespace System.Runtime.Serialization.BinaryFormat;
 // we need it to handle TypeForwardedFromAttribute!
 internal static class FormatterServices
 {
-    private static string? _coreLibAssemblyName;
+    private static AssemblyNameInfo? _coreLibAssemblyName;
 
-    internal static string CoreLibAssemblyName = _coreLibAssemblyName ??= GetAssemblyNameIncludingTypeForwards(typeof(object));
+    internal static AssemblyNameInfo CoreLibAssemblyName => _coreLibAssemblyName ??= AssemblyNameInfo.Parse(GetAssemblyNameIncludingTypeForwards(typeof(object)).AsSpan());
 
     internal static string GetAssemblyNameIncludingTypeForwards(Type type)
     {

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -24,9 +25,9 @@ public abstract class ClassRecord : SerializationRecord
         MemberValues = new();
     }
 
-    public string TypeName => ClassInfo.Name;
+    public TypeName TypeName => ClassInfo.Name;
 
-    public abstract string LibraryName { get; }
+    public abstract AssemblyNameInfo LibraryName { get; }
 
     // Currently we don't expose raw values, so we are not preserving the order here.
     public IEnumerable<string> MemberNames => ClassInfo.MemberNames.Keys;

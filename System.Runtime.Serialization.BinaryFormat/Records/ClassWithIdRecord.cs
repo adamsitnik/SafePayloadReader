@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -23,7 +24,7 @@ internal sealed class ClassWithIdRecord : ClassRecord
 
     public override RecordType RecordType => RecordType.ClassWithId;
 
-    public override string LibraryName => MetadataClass.LibraryName;
+    public override AssemblyNameInfo LibraryName => MetadataClass.LibraryName;
 
     internal override int ObjectId { get; }
 

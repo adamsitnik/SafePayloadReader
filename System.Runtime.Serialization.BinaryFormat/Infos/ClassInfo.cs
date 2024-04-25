@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -17,7 +18,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 [DebuggerDisplay("{Name}")]
 internal sealed class ClassInfo
 {
-    private ClassInfo(int objectId, string name, Dictionary<string, int> memberNames)
+    private ClassInfo(int objectId, TypeName name, Dictionary<string, int> memberNames)
     {
         ObjectId = objectId;
         Name = name;
@@ -26,14 +27,14 @@ internal sealed class ClassInfo
 
     internal int ObjectId { get; }
 
-    internal string Name { get; }
+    internal TypeName Name { get; }
 
     internal Dictionary<string, int> MemberNames { get; }
 
-    internal static ClassInfo Parse(BinaryReader reader)
+    internal static ClassInfo Parse(BinaryReader reader, PayloadOptions payloadOptions)
     {
         int objectId = reader.ReadInt32();
-        string name = reader.ReadString();
+        TypeName typeName = reader.ReadTypeName(payloadOptions);
         int memberCount = reader.ReadInt32();
 
         // The attackers could create an input with MANY member names.
@@ -51,6 +52,6 @@ internal sealed class ClassInfo
             memberNames.Add(reader.ReadString(), i);
         }
 
-        return new(objectId, name, memberNames);
+        return new(objectId, typeName, memberNames);
     }
 }
