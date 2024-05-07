@@ -113,10 +113,17 @@ public static class PayloadReader
             {
                 NextInfo nextInfo = readStack.Pop();
 
-                if (nextInfo.Allowed != AllowedRecordTypes.None) 
+                if (nextInfo.Allowed != AllowedRecordTypes.None)
                 {
-                    // Read the next Record.
-                    nextRecord = ReadNext(reader, recordMap, nextInfo.Allowed, options, out _);
+                    // Read the next Record
+                    do
+                    {
+                        nextRecord = ReadNext(reader, recordMap, nextInfo.Allowed, options, out _);
+                        // BinaryLibrary often precedes class records.
+                        // It has been already added to the RecordMap and it must not be added
+                        // to the array record, so simply read next record.
+                        // It's possible to read multiple BinaryLibraryRecord in a row, hence the loop.
+                    } while (nextRecord is BinaryLibraryRecord);
                     // Handle it:
                     // - add to the parent records list,
                     // - push next info if there are remaining nested records to read.

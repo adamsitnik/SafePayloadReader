@@ -2,6 +2,8 @@
 using System.IO;
 using Xunit;
 using System.Linq;
+using System.Text.Json;
+using System.Reflection;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests
 {
@@ -73,21 +75,35 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
             yield return new object[] { new DateTime(2000, 01, 01) };
             yield return new object[] { new Exception("SystemType") };
             yield return new object[] { new[] { "string" } };
-            yield return new object[] { new [] { true} };
-            yield return new object[] { new [] { byte.MaxValue} };
-            yield return new object[] { new [] { sbyte.MaxValue} };
-            yield return new object[] { new [] { short.MaxValue} };
-            yield return new object[] { new [] { ushort.MaxValue} };
-            yield return new object[] { new [] { int.MaxValue} };
-            yield return new object[] { new [] { uint.MaxValue} };
-            yield return new object[] { new [] { long.MaxValue} };
-            yield return new object[] { new [] { ulong.MaxValue} };
-            yield return new object[] { new [] { float.MaxValue} };
-            yield return new object[] { new [] { double.MaxValue} };
-            yield return new object[] { new [] { decimal.MaxValue} };
-            yield return new object[] { new [] { TimeSpan.MaxValue} };
-            yield return new object[] { new [] { new DateTime(2000, 01, 01)} };
-            yield return new object[] { new [] { new Exception("SystemType")} };
+            yield return new object[] { new[] { true } };
+            yield return new object[] { new[] { byte.MaxValue } };
+            yield return new object[] { new[] { sbyte.MaxValue } };
+            yield return new object[] { new[] { short.MaxValue } };
+            yield return new object[] { new[] { ushort.MaxValue } };
+            yield return new object[] { new[] { int.MaxValue } };
+            yield return new object[] { new[] { uint.MaxValue } };
+            yield return new object[] { new[] { long.MaxValue } };
+            yield return new object[] { new[] { ulong.MaxValue } };
+            yield return new object[] { new[] { float.MaxValue } };
+            yield return new object[] { new[] { double.MaxValue } };
+            yield return new object[] { new[] { decimal.MaxValue } };
+            yield return new object[] { new[] { TimeSpan.MaxValue } };
+            yield return new object[] { new[] { new DateTime(2000, 01, 01) } };
+            yield return new object[] { new[] { new Exception("SystemType") } };
+            // BinaryArrayRecord with BinaryType.SystemClass item that contains BinaryLibraryRecord
+            yield return new object[] { new Dictionary<int, NonSystemPoint>()
+            {
+                { 1, new NonSystemPoint(1, 1) },
+                { 2, new NonSystemPoint(2, 2) }
+            }};
+            // ClassWithMembersAndTypesRecord that contains MemberPrimitiveTypedRecord
+            yield return new object[] { new JsonException("message", path: "path", lineNumber: 1, bytePositionInLine: 2) };
+            // More than one BinaryArrayRecord in a row
+            yield return new object[] { new Dictionary<NonSystemPoint, JsonException>()
+            {
+                { new NonSystemPoint(1, 1), new JsonException("message") },
+                { new NonSystemPoint(2, 2), new JsonException("message") }
+            }};
         }
 
         [Theory]
@@ -203,10 +219,61 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
                 case ArrayRecord<ClassRecord> record when record.IsTypeNameMatching(typeof(Exception[])):
                     Assert.Equal(((Exception[])input)[0].Message, record.ToArray()[0]!.GetString("Message"));
                     break;
+                case ClassRecord record when record.IsTypeNameMatching(typeof(JsonException)):
+                    Assert.Equal(((JsonException)input).Message, record.GetString("Message"));
+                    break;
+                case ClassRecord record when record.IsTypeNameMatching(typeof(Dictionary<int, NonSystemPoint>)):
+                    VerifyDictionary<int, NonSystemPoint>(record);
+                    break;
+                case ClassRecord record when record.IsTypeNameMatching(typeof(Dictionary<NonSystemPoint, JsonException>)):
+                    VerifyDictionary<NonSystemPoint, JsonException>(record);
+                    break;
                 default:
                     Assert.Fail($"All cases should be handled! Record was {root.GetType()}, input was {input.GetType()}");
                     break;
             }
+
+            static void VerifyDictionary<TKey, TValue>(ClassRecord record)
+            {
+                ArrayRecord<ClassRecord> arrayRecord = (ArrayRecord<ClassRecord>)record.GetSerializationRecord("KeyValuePairs")!;
+                ClassRecord[] keyValuePairs = arrayRecord.ToArray()!;
+                Assert.True(keyValuePairs[0].IsTypeNameMatching(typeof(KeyValuePair<TKey, TValue>)));
+            }
         }
+    }
+
+    [Serializable]
+    public class NonSystemPoint : IComparable<NonSystemPoint>, IEquatable<NonSystemPoint>
+    {
+        public int X;
+        public int Y;
+
+        public NonSystemPoint(int x, int y)
+        {
+            X = x;
+            Y = y;
+        }
+
+        public int CompareTo(object obj)
+        {
+
+            return CompareTo(obj as NonSystemPoint);
+        }
+
+        public int CompareTo(NonSystemPoint other)
+        {
+            return other is null ? 1 : 0;
+        }
+
+        public override bool Equals(object obj) => Equals(obj as NonSystemPoint);
+
+        public bool Equals(NonSystemPoint other)
+        {
+            return other is not null &&
+                X == other.X &&
+                Y == other.Y;
+        }
+
+        public override int GetHashCode() => 1;
     }
 }

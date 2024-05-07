@@ -82,7 +82,9 @@ internal readonly struct MemberTypeInfo
 
         // Every class can be a null or a reference and a ClassWithId (TODO: verify ClassId)
         const AllowedRecordTypes classes = AllowedRecordTypes.ClassWithId
-            | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference;
+            | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference 
+            | AllowedRecordTypes.MemberPrimitiveTyped
+            | AllowedRecordTypes.BinaryLibrary; // classes may be preceded with a library record (System too!)
         // but System classes can be expressed only by System records
         const AllowedRecordTypes systemClass = classes
             | AllowedRecordTypes.SystemClassWithMembers | AllowedRecordTypes.SystemClassWithMembersAndTypes;
