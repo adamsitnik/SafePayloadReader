@@ -17,9 +17,15 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
+    private static TypeName? s_elementTypeName;
+
     private ArraySingleStringRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = [];
 
     public override RecordType RecordType => RecordType.ArraySingleString;
+
+    public override TypeName ElementTypeName => s_elementTypeName ??= TypeName.Parse(typeof(string).FullName.AsSpan());
+
+    public override AssemblyNameInfo ElementTypeLibraryName => FormatterServices.CoreLibAssemblyName;
 
     private List<SerializationRecord> Records { get; }
 

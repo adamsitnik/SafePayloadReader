@@ -30,7 +30,9 @@ public abstract class ArrayRecord : SerializationRecord
     /// </summary>
     public ArrayType ArrayType => ArrayInfo.ArrayType;
 
-    public abstract TypeName TypeName { get; }
+    public abstract TypeName ElementTypeName { get; }
+
+    public abstract AssemblyNameInfo ElementTypeLibraryName { get; }
 
     public override int ObjectId => ArrayInfo.ObjectId;
 

@@ -79,6 +79,11 @@ public static class PayloadReader
     /// <exception cref="DecoderFallbackException">When reading input from <paramref name="payload"/>
     /// encounters invalid sequence of UTF8 characters.</exception>
     public static SerializationRecord Read(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
+        => Read(payload, out _, options);
+
+    /// <param name="recordMap">Record map</param>
+    /// <inheritdoc cref="Read(Stream, PayloadOptions?, bool)"/>
+    public static SerializationRecord Read(Stream payload, out IReadOnlyDictionary<int, SerializationRecord> recordMap, PayloadOptions? options = default, bool leaveOpen = false)
     {
 #if NETCOREAPP
         ArgumentNullException.ThrowIfNull(payload);
@@ -87,7 +92,7 @@ public static class PayloadReader
 #endif
 
         using BinaryReader reader = new(payload, ThrowOnInvalidUtf8Encoding, leaveOpen: leaveOpen);
-        return Read(reader, options ?? new());
+        return Read(reader, options ?? new(), out recordMap);
     }
 
     /// <summary>
@@ -98,7 +103,7 @@ public static class PayloadReader
     public static ClassRecord ReadClassRecord(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
         => (ClassRecord)Read(payload, options, leaveOpen);
 
-    private static SerializationRecord Read(BinaryReader reader, PayloadOptions options)
+    private static SerializationRecord Read(BinaryReader reader, PayloadOptions options, out IReadOnlyDictionary<int, SerializationRecord> readOnlyRecordMap)
     {
         Stack<NextInfo> readStack = new();
         RecordMap recordMap = new();
