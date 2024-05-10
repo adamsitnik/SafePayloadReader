@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.BinaryFormat;
 using System.Runtime.Serialization.Formatters.Binary;
 
@@ -18,6 +19,13 @@ namespace Playground
         }
 
         static void Main()
+        {
+            ReadClass();
+            SwitchLike();
+            ReadArrayOfClasses();
+        }
+
+        static void ReadClass()
         {
             Sample input = new()
             {
@@ -46,7 +54,7 @@ namespace Playground
                     Text = rootRecord
                         .GetClassRecord(nameof(Sample.ClassInstance))!
                         .GetString(nameof(Sample.Text))
-                }  
+                }
             };
 
             Console.WriteLine($"{output.Integer}, {output.Text}");
@@ -78,6 +86,35 @@ namespace Playground
             {
                 Console.WriteLine($"It was a class record of '{classRecord.TypeName}' type.");
             }
+        }
+
+        static void ReadArrayOfClasses()
+        {
+            Sample[] input = new[]
+            {
+                new Sample()
+                {
+                    Integer = 1,
+                    Text = "First"
+                },
+                new Sample()
+                {
+                    Integer = 2,
+                    Text = "Second"
+                },
+            };
+
+            using MemoryStream payload = Serialize(input);
+
+            ArrayRecord<ClassRecord> rootRecord = (ArrayRecord<ClassRecord>)PayloadReader.Read(payload);
+            ClassRecord[] classRecords = rootRecord.ToArray(allowNulls: false)!;
+            Sample[] output = classRecords
+                .Select(classRecord => new Sample()
+                {
+                    Integer = classRecord.GetInt32(nameof(Sample.Integer)),
+                    Text = classRecord.GetString(nameof(Sample.Text))
+                })
+                .ToArray();
         }
 
         static MemoryStream Serialize<T>(T instance) where T : notnull
