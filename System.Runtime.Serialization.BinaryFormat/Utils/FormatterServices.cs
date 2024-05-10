@@ -1,4 +1,7 @@
-﻿using System.Reflection.Metadata;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Reflection.Metadata;
 using System.Runtime.CompilerServices;
 using System.Text;
 
@@ -8,9 +11,9 @@ namespace System.Runtime.Serialization.BinaryFormat;
 // we need it to handle TypeForwardedFromAttribute!
 internal static class FormatterServices
 {
-    private static AssemblyNameInfo? _coreLibAssemblyName;
+    private static AssemblyNameInfo? s_coreLibAssemblyName;
 
-    internal static AssemblyNameInfo CoreLibAssemblyName => _coreLibAssemblyName ??= AssemblyNameInfo.Parse(GetAssemblyNameIncludingTypeForwards(typeof(object)).AsSpan());
+    internal static AssemblyNameInfo CoreLibAssemblyName => s_coreLibAssemblyName ??= AssemblyNameInfo.Parse(GetAssemblyNameIncludingTypeForwards(typeof(object)).AsSpan());
 
     internal static string GetAssemblyNameIncludingTypeForwards(Type type)
     {
@@ -61,7 +64,7 @@ internal static class FormatterServices
             builder.Append(GetAssemblyNameIncludingTypeForwards(genericArgument)).Append("],");
         }
 
-        //remove the last comma and close typename for generic with a close bracket
+        // remove the last comma and close typename for generic with a close bracket
         return builder.Remove(builder.Length - 1, 1).Append(']').ToString();
     }
 }

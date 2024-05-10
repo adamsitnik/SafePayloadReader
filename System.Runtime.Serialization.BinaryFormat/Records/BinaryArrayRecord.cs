@@ -1,25 +1,25 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 internal sealed class BinaryArrayRecord : ArrayRecord
 {
-    private readonly static HashSet<Type> PrimitiveTypes = new()
-    {
+    private static HashSet<Type> PrimitiveTypes { get; } =
+    [
         typeof(bool), typeof(char), typeof(byte), typeof(sbyte),
         typeof(short), typeof(ushort), typeof(int), typeof(uint),
         typeof(long), typeof(ulong), typeof(IntPtr), typeof(UIntPtr),
         typeof(float), typeof(double), typeof(decimal), typeof(DateTime),
         typeof(TimeSpan), typeof(string), typeof(object)
-    };
+    ];
 
     private BinaryArrayRecord(ArrayInfo arrayInfo, MemberTypeInfo memberTypeInfo, RecordMap recordMap)
         : base(arrayInfo)
     {
         MemberTypeInfo = memberTypeInfo;
         RecordMap = recordMap;
-        Values = new();
+        Values = [];
     }
 
     public override RecordType RecordType => RecordType.BinaryArray;
@@ -66,12 +66,14 @@ internal sealed class BinaryArrayRecord : ArrayRecord
                     {
                         ThrowHelper.ThrowArrayContainedNull();
                     }
+
                     int nullCount = ((NullsRecord)item).NullCount;
                     do
                     {
                         array.SetValue(null, resultIndex++);
                         nullCount--;
-                    } while (nullCount > 0);
+                    }
+                    while (nullCount > 0);
                     break;
                 default:
                     array.SetValue(record.GetValue(), resultIndex++);
@@ -87,16 +89,17 @@ internal sealed class BinaryArrayRecord : ArrayRecord
         int objectId = reader.ReadInt32();
 
         byte typeByte = reader.ReadByte();
-        if (typeByte < 0 || typeByte > 5 )
+        if (typeByte is < 0 or > 5)
         {
             throw new SerializationException($"Unknown binary array type: {typeByte}");
         }
+
         ArrayType arrayType = (ArrayType)typeByte;
         int rank = reader.ReadInt32();
 
         bool isRectangular = arrayType is ArrayType.Rectangular or ArrayType.RectangularOffset;
 
-        if (rank < 1 || rank > 32 
+        if (rank < 1 || rank > 32
             || (rank != 1 && !isRectangular)
             || (rank == 1 && isRectangular))
         {
@@ -144,7 +147,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord
                 }
 
                 offsets[i] = offset;
-            }   
+            }
         }
 
         MemberTypeInfo memberTypeInfo = MemberTypeInfo.Parse(reader, 1, options);
@@ -208,6 +211,7 @@ internal sealed class BinaryArrayRecord : ArrayRecord
         {
             complexType = complexType.MakeArrayType();
         }
+
         return complexType;
     }
 }

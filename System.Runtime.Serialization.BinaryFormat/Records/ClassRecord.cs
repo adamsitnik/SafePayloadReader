@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Diagnostics;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
 using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -22,7 +23,7 @@ public abstract class ClassRecord : SerializationRecord
     private protected ClassRecord(ClassInfo classInfo)
     {
         ClassInfo = classInfo;
-        MemberValues = new();
+        MemberValues = [];
     }
 
     public TypeName TypeName => ClassInfo.Name;
@@ -46,8 +47,10 @@ public abstract class ClassRecord : SerializationRecord
     /// <param name="memberName">The name of the member.</param>
     /// <returns>True if it was present, otherwise false.</returns>
     /// <remarks>
-    /// It's recommended to use this method when dealing with payload that may contain
-    /// different versions of the same type.s
+    ///  <para>
+    ///   It's recommended to use this method when dealing with payload that may contain
+    ///   different versions of the same type.s
+    ///  </para>
     /// </remarks>
     public bool HasMember(string memberName) => ClassInfo.MemberNames.ContainsKey(memberName);
 

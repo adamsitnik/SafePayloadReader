@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
 using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
@@ -16,13 +17,15 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal readonly struct MemberTypeInfo
 {
-    internal MemberTypeInfo(IReadOnlyList<(BinaryType BinaryType, object? AdditionalInfo)> infos) => Infos = infos;
+    internal MemberTypeInfo(IReadOnlyList<(BinaryType BinaryType, object? AdditionalInfo)> infos) => _infos = infos;
 
-    internal readonly IReadOnlyList<(BinaryType BinaryType, object? AdditionalInfo)> Infos;
+    private readonly IReadOnlyList<(BinaryType BinaryType, object? AdditionalInfo)> _infos;
+
+    internal IReadOnlyList<(BinaryType BinaryType, object? AdditionalInfo)> Infos => _infos;
 
     internal static MemberTypeInfo Parse(BinaryReader reader, int count, PayloadOptions options)
     {
-        List<(BinaryType BinaryType, object? AdditionalInfo)> info = new();
+        List<(BinaryType BinaryType, object? AdditionalInfo)> info = [];
 
         // [MS-NRBF] 2.3.1.2
         // https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-nrbf/aa509b5a-620a-4592-a5d8-7e9613e0a03e
@@ -71,7 +74,7 @@ internal readonly struct MemberTypeInfo
         // Every array can be either an array itself, a null or a reference (to an array)
         const AllowedRecordTypes stringArray = AllowedRecordTypes.ArraySingleString
             | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference;
-        const AllowedRecordTypes primitiveArray = AllowedRecordTypes.ArraySinglePrimitive 
+        const AllowedRecordTypes primitiveArray = AllowedRecordTypes.ArraySinglePrimitive
             | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference;
         const AllowedRecordTypes objectArray = AllowedRecordTypes.ArraySingleObject
             | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference;
@@ -82,7 +85,7 @@ internal readonly struct MemberTypeInfo
 
         // Every class can be a null or a reference and a ClassWithId (TODO: verify ClassId)
         const AllowedRecordTypes classes = AllowedRecordTypes.ClassWithId
-            | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference 
+            | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference
             | AllowedRecordTypes.MemberPrimitiveTyped
             | AllowedRecordTypes.BinaryLibrary; // classes may be preceded with a library record (System too!)
         // but System classes can be expressed only by System records
@@ -127,8 +130,10 @@ internal readonly struct MemberTypeInfo
                     {
                         return false;
                     }
+
                     typeElement = typeElement.GetElementType()!;
                 }
+
                 return ((PrimitiveType)additionalInfo!) switch
                 {
                     PrimitiveType.Boolean => typeElement == typeof(bool),
@@ -153,6 +158,7 @@ internal readonly struct MemberTypeInfo
                 {
                     return false;
                 }
+
                 TypeName typeName = (TypeName)additionalInfo!;
                 string fullSystemClassName = FormatterServices.GetTypeFullNameIncludingTypeForwards(typeElement);
                 return typeName.FullName == fullSystemClassName;
@@ -163,6 +169,7 @@ internal readonly struct MemberTypeInfo
                 {
                     return false;
                 }
+
                 BinaryLibraryRecord libraryRecord = (BinaryLibraryRecord)recordMap[typeInfo.LibraryId];
                 string assemblyName = FormatterServices.GetAssemblyNameIncludingTypeForwards(typeElement);
                 return assemblyName == libraryRecord.LibraryName.FullName;

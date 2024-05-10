@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -6,8 +7,10 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// Abstract class that represents the serialization record.
 /// </summary>
 /// <remarks>
-/// Every instance returned to the end user can be either <seealso cref="PrimitiveTypeRecord{T}"/>,
-/// a <seealso cref="ClassRecord"/> or an <seealso cref="ArrayRecord"/>.
+///  <para>
+///   Every instance returned to the end user can be either <seealso cref="PrimitiveTypeRecord{T}"/>,
+///   a <seealso cref="ClassRecord"/> or an <seealso cref="ArrayRecord"/>.
+///  </para>
 /// </remarks>
 [DebuggerDisplay("{RecordType}, {ObjectId}")]
 public abstract class SerializationRecord

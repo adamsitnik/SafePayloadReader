@@ -1,4 +1,7 @@
-﻿namespace System.Runtime.Serialization.BinaryFormat;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+namespace System.Runtime.Serialization.BinaryFormat;
 
 /// <summary>
 ///  Record that marks the end of the binary format stream.
@@ -12,7 +15,7 @@
 /// </remarks>
 internal sealed class MessageEndRecord : SerializationRecord
 {
-    internal static readonly MessageEndRecord Singleton = new();
+    internal static MessageEndRecord Singleton { get; } = new();
 
     private MessageEndRecord()
     {

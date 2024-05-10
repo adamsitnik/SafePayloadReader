@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -9,7 +10,7 @@ internal sealed class ArrayOfClassesRecord : ArrayRecord<ClassRecord>
     {
         MemberTypeInfo = memberTypeInfo;
         RecordMap = recordMap;
-        Records = new();
+        Records = [];
     }
 
     public override RecordType RecordType => RecordType.BinaryArray;
@@ -25,7 +26,7 @@ internal sealed class ArrayOfClassesRecord : ArrayRecord<ClassRecord>
         ClassRecord?[] result = new ClassRecord?[Length];
 
         int resultIndex = 0;
-        foreach (SerializationRecord record in Records) 
+        foreach (SerializationRecord record in Records)
         {
             SerializationRecord actual = record is MemberReferenceRecord referenceRecord
                 ? referenceRecord.GetReferencedRecord()
@@ -47,7 +48,8 @@ internal sealed class ArrayOfClassesRecord : ArrayRecord<ClassRecord>
                 {
                     result[resultIndex++] = null;
                     nullCount--;
-                } while (nullCount > 0);
+                }
+                while (nullCount > 0);
             }
         }
 

@@ -1,8 +1,8 @@
-﻿using System.Buffers;
-using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Buffers;
 using System.Globalization;
-using System.IO;
-using System.Linq;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -33,7 +33,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
 
     internal override bool IsElementType(Type typeElement) => typeElement == typeof(T);
 
-    protected override T[] ToArrayOfT(bool allowNulls) => Values.ToArray();
+    protected override T[] ToArrayOfT(bool allowNulls) => [.. Values];
 
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
         => throw new InvalidOperationException("This should never happen");
@@ -48,7 +48,7 @@ internal class ArraySinglePrimitiveRecord<T> : ArrayRecord<T>
             return (IReadOnlyList<T>)(object)ReadBytes(reader, count);
         }
 
-        List<T> values = new();
+        List<T> values = [];
         for (int i = 0; i < count; i++)
         {
             if (typeof(T) == typeof(bool))

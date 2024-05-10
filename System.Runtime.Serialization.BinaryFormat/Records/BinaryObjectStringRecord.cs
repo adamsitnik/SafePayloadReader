@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -23,7 +23,7 @@ internal sealed class BinaryObjectStringRecord : PrimitiveTypeRecord<string>
 
     public override RecordType RecordType => RecordType.BinaryObjectString;
 
-    internal override int ObjectId { get; }
+    public override int ObjectId { get; }
 
     internal static BinaryObjectStringRecord Parse(BinaryReader reader)
         => new(reader.ReadInt32(), reader.ReadString());

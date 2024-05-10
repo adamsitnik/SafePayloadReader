@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Collections;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 
@@ -28,7 +31,7 @@ internal sealed class RecordMap
     // keys (32-bit integer ids) are adversary-provided so we need a collision-resistant comparer
     private sealed class CollisionResistantInt32Comparer : IEqualityComparer<int>
     {
-        internal static readonly CollisionResistantInt32Comparer Instance = new();
+        internal static CollisionResistantInt32Comparer Instance { get; } = new();
 
         private CollisionResistantInt32Comparer() { }
 

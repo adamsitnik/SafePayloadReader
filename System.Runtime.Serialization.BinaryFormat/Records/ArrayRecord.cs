@@ -1,4 +1,9 @@
-﻿namespace System.Runtime.Serialization.BinaryFormat;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Reflection.Metadata;
+
+namespace System.Runtime.Serialization.BinaryFormat;
 
 public abstract class ArrayRecord : SerializationRecord
 {
@@ -25,7 +30,9 @@ public abstract class ArrayRecord : SerializationRecord
     /// </summary>
     public ArrayType ArrayType => ArrayInfo.ArrayType;
 
-    internal override int ObjectId => ArrayInfo.ObjectId;
+    public abstract TypeName TypeName { get; }
+
+    public override int ObjectId => ArrayInfo.ObjectId;
 
     internal long ValuesToRead { get; private protected set; }
 
@@ -44,7 +51,7 @@ public abstract class ArrayRecord : SerializationRecord
     private protected abstract Array Deserialize(Type arrayType, bool allowNulls, int maxLength);
 
     public override bool IsTypeNameMatching(Type type)
-        => type.IsArray 
+        => type.IsArray
         && type.GetArrayRank() == ArrayInfo.Rank
         && IsElementType(type.GetElementType()!);
 

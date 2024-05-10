@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -15,7 +17,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
 {
-    private ArraySingleObjectRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = new();
+    private ArraySingleObjectRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = [];
 
     public override RecordType RecordType => RecordType.ArraySingleObject;
 
@@ -51,7 +53,8 @@ internal sealed class ArraySingleObjectRecord : ArrayRecord<object?>
             {
                 values[valueIndex++] = null;
                 nullCount--;
-            } while (nullCount > 0);
+            }
+            while (nullCount > 0);
         }
 
         return values;

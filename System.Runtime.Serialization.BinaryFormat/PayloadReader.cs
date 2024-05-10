@@ -1,13 +1,14 @@
-﻿using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
 using System.Globalization;
-using System.IO;
 using System.Text;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
 public static class PayloadReader
 {
-    private static readonly UTF8Encoding ThrowOnInvalidUtf8Encoding = new(false, throwOnInvalidBytes: true);
+    private static UTF8Encoding ThrowOnInvalidUtf8Encoding { get; } = new(false, throwOnInvalidBytes: true);
 
     /// <summary>
     /// Checks if given buffer contains only Binary Formatter payload.
@@ -27,15 +28,14 @@ public static class PayloadReader
     /// <exception cref="ArgumentNullException">The stream is null.</exception>
     /// <exception cref="NotSupportedException">The stream does not support reading or seeking.</exception>
     /// <exception cref="ObjectDisposedException">The stream was closed.</exception>
-    /// <remarks>It does not modify the position of the stream.</remarks>
+    /// <remarks><para>It does not modify the position of the stream.</para></remarks>
     public static bool ContainsBinaryFormatterPayload(Stream stream)
     {
-        if (stream is null)
-        { 
-            throw new ArgumentNullException(nameof(stream)); 
-        }
-
-
+#if NETCOREAPP
+        ArgumentNullException.ThrowIfNull(stream);
+#else
+        if (stream is null) throw new ArgumentNullException(nameof(stream));
+#endif
         // TODO: discuss an alternative approach, where we would parse SerializedStreamHeaderRecord
         // here and return false on failure
 
@@ -80,7 +80,11 @@ public static class PayloadReader
     /// encounters invalid sequence of UTF8 characters.</exception>
     public static SerializationRecord Read(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
     {
+#if NETCOREAPP
+        ArgumentNullException.ThrowIfNull(payload);
+#else
         if (payload is null) throw new ArgumentNullException(nameof(payload));
+#endif
 
         using BinaryReader reader = new(payload, ThrowOnInvalidUtf8Encoding, leaveOpen: leaveOpen);
         return Read(reader, options ?? new());
@@ -90,7 +94,7 @@ public static class PayloadReader
     /// Reads the provided Binary Format payload that is expected to contain an instance of any class (or struct) that is not an <seealso cref="Array"/> or a primitive type.
     /// </summary>
     /// <returns>A <seealso cref="ClassRecord"/> that represents the root object.</returns>
-    /// <inheritdoc cref="Read"/>
+    /// <inheritdoc cref="Read(Stream, PayloadOptions?, bool)"/>
     public static ClassRecord ReadClassRecord(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
         => (ClassRecord)Read(payload, options, leaveOpen);
 
@@ -123,7 +127,9 @@ public static class PayloadReader
                         // It has been already added to the RecordMap and it must not be added
                         // to the array record, so simply read next record.
                         // It's possible to read multiple BinaryLibraryRecord in a row, hence the loop.
-                    } while (nextRecord is BinaryLibraryRecord);
+                    }
+                    while (nextRecord is BinaryLibraryRecord);
+
                     // Handle it:
                     // - add to the parent records list,
                     // - push next info if there are remaining nested records to read.
@@ -142,15 +148,17 @@ public static class PayloadReader
 
             nextRecord = ReadNext(reader, recordMap, allowed, options, out recordType);
             PushFirstNestedRecordInfo(nextRecord, readStack);
-        } while (recordType != RecordType.MessageEnd);
+        }
+        while (recordType != RecordType.MessageEnd);
 
+        readOnlyRecordMap = recordMap;
         SerializationRecord rootRecord = recordMap[header.RootId];
         return rootRecord is SystemClassWithMembersAndTypesRecord systemClass
             ? systemClass.TryToMapToUserFriendly()
             : rootRecord;
     }
 
-    private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap, 
+    private static SerializationRecord ReadNext(BinaryReader reader, RecordMap recordMap,
         AllowedRecordTypes allowed, PayloadOptions options, out RecordType recordType)
     {
         recordType = (RecordType)reader.ReadByte();
@@ -257,7 +265,7 @@ public static class PayloadReader
     }
 
     /// <summary>
-    /// This method is responsible for pushing only the FIRST read info 
+    /// This method is responsible for pushing only the FIRST read info
     /// of the NESTED record into the <paramref name="readStack"/>.
     /// It's not pushing all of them, because it could be used as a vector of attack.
     /// Example: BinaryArrayRecord with <seealso cref="Array.MaxLength"/> length,

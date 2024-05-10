@@ -1,5 +1,5 @@
-﻿using System.Diagnostics;
-using System.IO;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -39,7 +39,7 @@ internal readonly struct ArrayInfo
     {
         int length = reader.ReadInt32();
 
-        if (length < 0 || length > 2147483591) // Array.MaxLength
+        if (length is < 0 or > 2147483591) // Array.MaxLength
         {
             throw new SerializationException($"Invalid array length: {length}");
         }

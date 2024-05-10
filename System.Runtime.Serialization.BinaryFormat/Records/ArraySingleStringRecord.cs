@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Reflection.Metadata;
 
 namespace System.Runtime.Serialization.BinaryFormat;
 
@@ -15,7 +17,7 @@ namespace System.Runtime.Serialization.BinaryFormat;
 /// </remarks>
 internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 {
-    private ArraySingleStringRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = new();
+    private ArraySingleStringRecord(ArrayInfo arrayInfo) : base(arrayInfo) => Records = [];
 
     public override RecordType RecordType => RecordType.ArraySingleString;
 
@@ -31,7 +33,7 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
     internal override (AllowedRecordTypes allowed, PrimitiveType primitiveType) GetAllowedRecordType()
     {
         // An array of string can consist of string(s), null(s) and reference(s) to string(s).
-        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString 
+        const AllowedRecordTypes allowedTypes = AllowedRecordTypes.BinaryObjectString
             | AllowedRecordTypes.Nulls | AllowedRecordTypes.MemberReference;
 
         return (allowedTypes, default);
@@ -75,7 +77,8 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
             {
                 values[valueIndex++] = null;
                 nullCount--;
-            } while (nullCount > 0);
+            }
+            while (nullCount > 0);
         }
 
         return values;

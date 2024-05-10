@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -139,7 +141,7 @@ internal sealed class RectangularOrCustomOffsetArrayRecord : ArrayRecord
         return (allowed, primitiveType);
     }
 
-    internal static RectangularOrCustomOffsetArrayRecord Create(ArrayInfo arrayInfo, 
+    internal static RectangularOrCustomOffsetArrayRecord Create(ArrayInfo arrayInfo,
         MemberTypeInfo memberTypeInfo, int[] lengths, int[] offsets, RecordMap recordMap)
     {
         return memberTypeInfo.Infos[0].BinaryType switch
