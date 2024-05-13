@@ -405,6 +405,10 @@ public class ReadExactTypesTests : ReadTests
         Verify(decimal.MaxValue);
         Verify(TimeSpan.MaxValue);
         Verify(DateTime.Now);
+#if NETCOREAPP
+        Verify(nint.MaxValue);
+        Verify(nuint.MaxValue);
+#endif
 
         static void Verify<T>(T input) where T : unmanaged
         {
