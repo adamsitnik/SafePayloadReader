@@ -84,4 +84,16 @@ public class CustomOffsetArrays : ReadTests
             }
         }
     }
+
+    [Fact]
+    public void JaggedCustomOffset()
+    {
+        Array input = Array.CreateInstance(typeof(uint[]), [5], [1]);
+
+        ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
+
+        Array output = arrayRecord.ToArray(expectedArrayType: input.GetType());
+
+        Assert.Equal(input, output);
+    }
 }
