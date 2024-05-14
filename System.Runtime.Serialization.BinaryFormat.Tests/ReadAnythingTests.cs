@@ -104,6 +104,7 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
                 { new NonSystemPoint(1, 1), new JsonException("message") },
                 { new NonSystemPoint(2, 2), new JsonException("message") }
             }};
+            yield return new object[] { new int?[] { 1, 2, 3, null } };
         }
 
         [Theory]
@@ -227,6 +228,9 @@ namespace System.Runtime.Serialization.BinaryFormat.Tests
                     break;
                 case ClassRecord record when record.IsTypeNameMatching(typeof(Dictionary<NonSystemPoint, JsonException>)):
                     VerifyDictionary<NonSystemPoint, JsonException>(record);
+                    break;
+                case ArrayRecord arrayRecord when arrayRecord.IsTypeNameMatching(typeof(int?[])):
+                    Assert.Equal(input, arrayRecord.ToArray(typeof(int?[])));
                     break;
                 default:
                     Assert.Fail($"All cases should be handled! Record was {root.GetType()}, input was {input.GetType()}");
