@@ -108,8 +108,8 @@ public class ReadExactTypesTests : ReadTests
         ClassRecord classRecord = PayloadReader.ReadClassRecord(stream);
 
         Assert.Equal(input.SomeObject, classRecord.GetString(nameof(CustomTypeWithObjectField.SomeObject)));
-        Assert.Same(classRecord.GetObject(nameof(CustomTypeWithObjectField.ActualObject)),
-                    classRecord.GetObject(nameof(CustomTypeWithObjectField.ReferenceToSameObject)));
+        Assert.Same(classRecord.GetRawValue(nameof(CustomTypeWithObjectField.ActualObject)),
+                    classRecord.GetRawValue(nameof(CustomTypeWithObjectField.ReferenceToSameObject)));
         Assert.Same(classRecord, classRecord.GetClassRecord(nameof(CustomTypeWithObjectField.ReferenceToSelf)));
     }
 

@@ -72,7 +72,7 @@ public class ClassRecord : SerializationRecord
     public decimal GetDecimal(string memberName);
     public TimeSpan GetTimeSpan(string memberName);
     public DateTime GetDateTime(string memberName);
-    public object? GetObject(string memberName);
+    public object? GetRawValue(string memberName);
 
     // Retrieves an array for the provided memberName, with default max length
     public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = 64000) where T : unmanaged;
