@@ -32,6 +32,7 @@ internal static class ThrowHelper
         // The enum values are not part of the public API surface, as they are not supported
         // and users don't need to handle these values.
 
+#pragma warning disable IDE0066 // Convert switch statement to expression
         switch ((int)recordType)
         {
             case 2: // SystemClassWithMembers
@@ -48,5 +49,6 @@ internal static class ThrowHelper
             default:
                 throw new SerializationException($"Unexpected type seen: {recordType}.");
         }
+#pragma warning restore IDE0066 // Convert switch statement to expression
     }
 }

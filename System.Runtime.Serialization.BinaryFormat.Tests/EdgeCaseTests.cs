@@ -28,19 +28,35 @@ public class EdgeCaseTests : ReadTests
         Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.GetString("AssemblyName"));
     }
 
-    [Fact]
-    public void ArraysOfStringsCanContainMemberReferences()
+    [Theory]
+    [InlineData(FormatterTypeStyle.TypesAlways)]
+    [InlineData(FormatterTypeStyle.TypesAlways | FormatterTypeStyle.XsdString)]
+    public void ArraysOfStringsCanContainMemberReferences(FormatterTypeStyle typeFormat)
     {
         // it has to be the same object, not just the same value
         const string same = "same";
         string[] input = { same, same };
 
-        using MemoryStream stream = Serialize(input);
+        using MemoryStream stream = new();
+        BinaryFormatter binaryFormatter = new()
+        {
+            TypeFormat = typeFormat
+        };
+        binaryFormatter.Serialize(stream, input);
+        stream.Position = 0;
 
         string?[] ouput = ((ArrayRecord<string>)PayloadReader.Read(stream)).ToArray();
 
         Assert.Equal(input, ouput);
-        Assert.Same(ouput[0], ouput[1]);
+        
+        if ((typeFormat & FormatterTypeStyle.XsdString) == 0)
+        {
+            Assert.Same(ouput[0], ouput[1]);
+        }
+        else
+        {
+            Assert.NotSame(ouput[0], ouput[1]);
+        }
     }
 
     [Theory]

@@ -8,10 +8,8 @@ public abstract class ReadTests
     protected static MemoryStream Serialize<T>(T instance) where T : notnull
     {
         MemoryStream ms = new();
-#pragma warning disable SYSLIB0011 // Type or member is obsolete
-        BinaryFormatter binaryFormatter = new();
-#pragma warning restore SYSLIB0011 // Type or member is obsolete
-        binaryFormatter.Serialize(ms, instance);
+
+        CreateBinaryFormatter().Serialize(ms, instance);
 
         ms.Position = 0;
         return ms;
@@ -22,17 +20,27 @@ public abstract class ReadTests
     /// </summary>
     protected static FileStream SerializeToFile<T>(T instance) where T : notnull
     {
-        string path = Path.GetTempFileName();
-        FileStream fs = new(path, FileMode.OpenOrCreate, FileAccess.ReadWrite, 
+        FileStream fs = new(Path.GetTempFileName(), FileMode.OpenOrCreate, FileAccess.ReadWrite, 
             FileShare.None, bufferSize: 100_000, FileOptions.DeleteOnClose);
-#pragma warning disable SYSLIB0011 // Type or member is obsolete
-        BinaryFormatter binaryFormatter = new();
-#pragma warning restore SYSLIB0011 // Type or member is obsolete
-        binaryFormatter.Serialize(fs, instance);
+
+        CreateBinaryFormatter().Serialize(fs, instance);
+
         fs.Flush();
         fs.Position = 0;
         return fs;
     }
+
+#pragma warning disable SYSLIB0011 // Type or member is obsolete
+    protected static BinaryFormatter CreateBinaryFormatter()
+        => new()
+        {
+#if DEBUG // Ensure both valid formats are covered by the tests
+            TypeFormat = Formatters.FormatterTypeStyle.TypesAlways | Formatters.FormatterTypeStyle.XsdString,
+#else
+            TypeFormat = Formatters.FormatterTypeStyle.TypesAlways;
+#endif
+        };
+#pragma warning restore SYSLIB0011 // Type or member is obsolete
 
     protected static void WriteSerializedStreamHeader(BinaryWriter writer, int major = 1, int minor = 0)
     {
