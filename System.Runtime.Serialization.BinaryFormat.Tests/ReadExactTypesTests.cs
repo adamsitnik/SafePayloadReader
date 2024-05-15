@@ -78,7 +78,8 @@ public class ReadExactTypesTests : ReadTests
         Assert.True(classRecord.HasMember(nameof(CustomTypeWithStringField.Text)));
         Assert.Equal(input.Text, classRecord.GetString(nameof(CustomTypeWithStringField.Text)));
         Assert.Equal(typeof(CustomTypeWithStringField).FullName, classRecord.TypeName.FullName);
-        Assert.Equal(typeof(CustomTypeWithStringField).Assembly.FullName, classRecord.LibraryName.FullName);
+        Assert.Equal(typeof(CustomTypeWithStringField).AssemblyQualifiedName, classRecord.TypeName.AssemblyQualifiedName);
+        Assert.Equal(typeof(CustomTypeWithStringField).Assembly.FullName, classRecord.TypeName.AssemblyName!.FullName);
         Assert.False(classRecord.HasMember("NotPresent"));
     }
 
@@ -232,7 +233,7 @@ public class ReadExactTypesTests : ReadTests
         Assert.True(classRecord.HasMember(nameof(Exception.Message)));
         Assert.Equal(input.Message, classRecord.GetString(nameof(Exception.Message)));
         Assert.Equal(typeof(Exception).FullName, classRecord.TypeName.FullName);
-        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.LibraryName.FullName);
+        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", classRecord.TypeName.AssemblyName!.FullName);
         Assert.False(classRecord.HasMember("NotPresent"));
     }
 
@@ -264,7 +265,7 @@ public class ReadExactTypesTests : ReadTests
         ArrayRecord<ClassRecord> arrayRecord = ((ArrayRecord<ClassRecord>)PayloadReader.Read(Serialize(input)));
 
         Assert.Equal(typeof(CustomTypeWithPrimitiveFields).FullName, arrayRecord.ElementTypeName.FullName);
-        Assert.Equal(typeof(CustomTypeWithPrimitiveFields).Assembly.FullName, arrayRecord.ElementTypeLibraryName.FullName);
+        Assert.Equal(typeof(CustomTypeWithPrimitiveFields).Assembly.FullName, arrayRecord.ElementTypeName.AssemblyName!.FullName);
         ClassRecord?[] classRecords = arrayRecord.ToArray();
         for (int i = 0; i < input.Length; i++)
         {
@@ -334,7 +335,7 @@ public class ReadExactTypesTests : ReadTests
         ArrayRecord arrayRecord = (ArrayRecord)PayloadReader.Read(Serialize(input));
 
         Assert.Equal(typeof(object).FullName, arrayRecord.ElementTypeName.FullName);
-        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", arrayRecord.ElementTypeLibraryName.FullName);
+        Assert.Equal("mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089", arrayRecord.ElementTypeName.AssemblyName!.FullName);
         Assert.Equal(input, ((ArrayRecord<object>)arrayRecord).ToArray());
     }
 
@@ -437,5 +438,8 @@ public class ReadExactTypesTests : ReadTests
 
         Assert.Equal(input.Integer, classRecord.GetInt32(nameof(SerializableStruct.Integer)));
         Assert.Equal(input.Text, classRecord.GetString(nameof(SerializableStruct.Text)));
+        Assert.Equal(typeof(SerializableStruct).FullName, classRecord.TypeName.FullName);
+        Assert.Equal(typeof(SerializableStruct).AssemblyQualifiedName, classRecord.TypeName.AssemblyQualifiedName);
+        Assert.Equal(typeof(SerializableStruct).Assembly.FullName, classRecord.TypeName.AssemblyName!.FullName);
     }
 }
