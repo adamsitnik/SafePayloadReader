@@ -1,4 +1,6 @@
 ﻿using System.IO;
+using System.Runtime.Serialization.Formatters;
+using System.Runtime.Serialization.Formatters.Binary;
 using Xunit;
 
 namespace System.Runtime.Serialization.BinaryFormat.Tests;
@@ -58,5 +60,23 @@ public class EdgeCaseTests : ReadTests
 
         byte[] output = ((ArrayRecord<byte>)PayloadReader.Read(stream)).ToArray(maxLength: length);
         Assert.Equal(input, output);
+    }
+
+#pragma warning disable SYSLIB0011 // Type or member is obsolete
+    [Theory]
+    [InlineData(FormatterTypeStyle.TypesWhenNeeded)]
+    [InlineData(FormatterTypeStyle.XsdString)]
+    public void FormatterTypeStyleOtherThanTypesAlwaysAreNotSupportedByDesign(FormatterTypeStyle typeFormat)
+    {
+        using MemoryStream ms = new();
+        BinaryFormatter binaryFormatter = new()
+        {
+            TypeFormat = typeFormat
+        };
+#pragma warning restore SYSLIB0011 // Type or member is obsolete
+        binaryFormatter.Serialize(ms, true);
+        ms.Position = 0;
+
+        Assert.Throws<NotSupportedException>(() => PayloadReader.Read(ms));
     }
 }

@@ -221,9 +221,7 @@ public class AttackTests : ReadTests
     }
 
     [Theory]
-    [InlineData(RecordType.ClassWithMembers)]
     [InlineData(RecordType.ClassWithMembersAndTypes)]
-    [InlineData(RecordType.SystemClassWithMembers)]
     [InlineData(RecordType.SystemClassWithMembersAndTypes)]
     public void UnboundedRecursion_NestedClasses_FakeButValidInput(RecordType recordType)
     {
@@ -265,7 +263,7 @@ public class AttackTests : ReadTests
                 }
             }
             // LibraryId (if needed)
-            if (recordType is RecordType.ClassWithMembers or RecordType.ClassWithMembersAndTypes)
+            if (recordType is RecordType.ClassWithMembersAndTypes)
             {
                 writer.Write(LibraryId);
             }
