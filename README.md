@@ -48,8 +48,7 @@ The most important type that derives from `SerializationRecord` is `ClassRecord`
 ```cs
 public class ClassRecord : SerializationRecord
 {
-    public string TypeName { get; }
-    public string LibraryName { get; }
+    public TypeName TypeName { get; }
     public IEnumerable<string> MemberNames { get; }
 
     // Checks if member of given name was present in the payload (useful for versioning scenarios)
@@ -75,7 +74,7 @@ public class ClassRecord : SerializationRecord
     public object? GetRawValue(string memberName);
 
     // Retrieves an array for the provided memberName, with default max length
-    public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = 64000) where T : unmanaged;
+    public T[]? GetArrayOfPrimitiveType<T>(string memberName, int maxLength = 64000);
 
     // Retrieves an instance of ClassRecord that describes non-primitive type for the provided memberName
     public ClassRecord? GetClassRecord(string memberName);
@@ -117,8 +116,3 @@ Sample output = new()
 ```
 
 TODO: describe how to work with Jagged and Rectangular arrays
-
-
-
-
-
