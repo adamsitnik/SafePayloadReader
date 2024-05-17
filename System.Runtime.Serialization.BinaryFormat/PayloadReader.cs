@@ -36,9 +36,6 @@ public static class PayloadReader
 #else
         if (stream is null) throw new ArgumentNullException(nameof(stream));
 #endif
-        // TODO: discuss an alternative approach, where we would parse SerializedStreamHeaderRecord
-        // here and return false on failure
-
         long beginning = stream.Position;
         if (stream.Length - beginning < SerializedStreamHeaderRecord.Size + 2)
         {

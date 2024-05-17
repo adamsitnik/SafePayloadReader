@@ -83,7 +83,7 @@ internal readonly struct MemberTypeInfo
         const AllowedRecordTypes strings = AllowedRecordTypes.BinaryObjectString
             | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference;
 
-        // Every class can be a null or a reference and a ClassWithId (TODO: verify ClassId)
+        // Every class can be a null or a reference and a ClassWithId
         const AllowedRecordTypes classes = AllowedRecordTypes.ClassWithId
             | AllowedRecordTypes.ObjectNull | AllowedRecordTypes.MemberReference
             | AllowedRecordTypes.MemberPrimitiveTyped

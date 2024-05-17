@@ -60,8 +60,6 @@ internal sealed class ArraySingleStringRecord : ArrayRecord<string?>
 
                 if (record is not BinaryObjectStringRecord)
                 {
-                    // TODO: consider throwing this exception as soon as we read the referenced record.
-                    // It would require registering reference validation checks.
                     throw new SerializationException("The string array contained a reference to non-string.");
                 }
             }

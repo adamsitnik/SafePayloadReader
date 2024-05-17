@@ -21,9 +21,6 @@ internal static class ThrowHelper
     internal static void ThrowArrayContainedNull()
         => throw new SerializationException("The array contained null(s)");
 
-    internal static void ThrowTypeMismatch(Type expected)
-        => throw new SerializationException($"The payload was expected to contain an instance of {expected}, while it contained TODO");
-
     internal static void ThrowEndOfStreamException()
         => throw new EndOfStreamException();
 
