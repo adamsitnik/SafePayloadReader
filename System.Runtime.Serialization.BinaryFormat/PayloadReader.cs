@@ -76,7 +76,7 @@ public static class PayloadReader
     /// <exception cref="DecoderFallbackException">When reading input from <paramref name="payload"/>
     /// encounters invalid sequence of UTF8 characters.</exception>
     public static SerializationRecord Read(Stream payload, PayloadOptions? options = default, bool leaveOpen = false)
-        => Read(payload, out _, options);
+        => Read(payload, out _, options, leaveOpen);
 
     /// <param name="recordMap">Record map</param>
     /// <inheritdoc cref="Read(Stream, PayloadOptions?, bool)"/>
