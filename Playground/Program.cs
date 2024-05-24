@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.BinaryFormat;
@@ -18,9 +19,18 @@ namespace Playground
             public Sample? ClassInstance;
         }
 
+        [Serializable]
+        public class MoreComplex
+        {
+            public Guid Id { get; set; }
+            public FileAccess Enumeration { get; set; }
+            public Point Astruct { get; set; }
+        }
+
         static void Main()
         {
             ReadClass();
+            ReadMoreComplexType();
             SwitchLike();
             ReadArrayOfClasses();
         }
@@ -60,6 +70,57 @@ namespace Playground
             Console.WriteLine($"{output.Integer}, {output.Text}");
             Console.WriteLine($"{string.Join(",", output.ArrayOfBytes!)}");
             Console.WriteLine($"{output.ClassInstance.Text}");
+        }
+
+        static void ReadMoreComplexType()
+        {
+            MoreComplex input = new()
+            {
+                Id = Guid.NewGuid(),
+                Enumeration = FileAccess.ReadWrite,
+                Astruct = new Point(x: 1, y: 2)
+            };
+
+            using MemoryStream payload = Serialize(input);
+
+            ClassRecord rootRecord = PayloadReader.ReadClassRecord(payload);
+
+            // We need to use the field, not property name to get the value: https://review.learn.microsoft.com/en-us/dotnet/standard/serialization/binaryformatter-migration-guide/functionality-reference?branch=binaryformatter-migration-guide#member-names
+            ClassRecord guidRecord = rootRecord.GetClassRecord("<Id>k__BackingField")!;
+            // Guid is a very specific example where reading something simple takes a lot of work
+            // like checking the member types in https://github.com/dotnet/runtime/blob/f4c9264fe8448fdf1f66eda04a582cbade40cd39/src/libraries/System.Private.CoreLib/src/System/Guid.cs#L33-L43
+            Guid guid = new Guid
+            (
+                a: guidRecord.GetInt32("_a"),
+                b: guidRecord.GetInt16("_b"),
+                c: guidRecord.GetInt16("_c"),
+                d: guidRecord.GetByte("_d"),
+                e: guidRecord.GetByte("_e"),
+                f: guidRecord.GetByte("_f"),
+                g: guidRecord.GetByte("_g"),
+                h: guidRecord.GetByte("_h"),
+                i: guidRecord.GetByte("_i"),
+                j: guidRecord.GetByte("_j"),
+                k: guidRecord.GetByte("_k")
+            );
+            ClassRecord structRecord = rootRecord.GetClassRecord("<Astruct>k__BackingField")!;
+            Point point = new Point
+            (
+                x: structRecord.GetInt32("x"),
+                y: structRecord.GetInt32("y")
+            );
+
+            MoreComplex output = new()
+            {
+                Id = guid,
+                // enums are represented as ClassRecords with a single field "value__"
+                Enumeration = (FileAccess)rootRecord.GetClassRecord("<Enumeration>k__BackingField")!.GetInt32("value__"),
+                Astruct = point
+            };
+
+            Console.WriteLine(output.Id);
+            Console.WriteLine(output.Enumeration);
+            Console.WriteLine(output.Astruct);
         }
 
         static void SwitchLike()
